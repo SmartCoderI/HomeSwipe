@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HomeSwipe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'cream': '#FAF9F6',
+            'greige': '#E6E2DA',
+            'charcoal': '#2E2E2E',
+            'peri': '#6667AB',
+            'peri-light': '#8E8FCA',
+            'gold': '#D4AF37',
+            'sage': '#8BA888',
+            'coral': '#E9967A',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'blob': 'blob 10s infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(40px, -60px) scale(1.2)' },
+              '66%': { transform: 'translate(-30px, 30px) scale(0.8)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            }
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FAF9F6;
+      color: #2E2E2E;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+    .glass-dark {
+      background: rgba(46, 46, 46, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .liquid-shadow {
+      box-shadow: 0 25px 60px -15px rgba(102, 103, 171, 0.15);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .text-glow {
+      text-shadow: 0 0 20px rgba(102, 103, 171, 0.2);
+    }
+    .mesh-gradient {
+      background: radial-gradient(at top left, #8E8FCA, transparent),
+                  radial-gradient(at bottom right, #6667AB, transparent);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.36.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="relative">
+  <!-- Enhanced Animated Background Blobs -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute top-[-20%] left-[-15%] w-[70%] h-[70%] bg-peri/15 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
+    <div class="absolute top-[30%] right-[-15%] w-[55%] h-[55%] bg-sage/10 rounded-full mix-blend-multiply filter blur-[100px] animate-blob" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-[-20%] left-[10%] w-[80%] h-[80%] bg-coral/10 rounded-full mix-blend-multiply filter blur-[100px] animate-blob" style="animation-delay: 4s;"></div>
+    <div class="absolute top-[40%] left-[25%] w-[30%] h-[30%] bg-gold/5 rounded-full mix-blend-multiply filter blur-[80px] animate-blob" style="animation-delay: 6s;"></div>
+  </div>
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

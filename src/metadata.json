@@ -1,0 +1,8 @@
+{
+  "name": "HomeSwipe",
+  "description": "A swipe-based real estate discovery experience that recommends homes based on natural-language preferences with a modern iOS-inspired liquid glass UI.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
