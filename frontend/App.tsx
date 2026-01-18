@@ -1,11 +1,16 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Home, AppState } from './types';
 import { LandingPage } from './views/LandingPage';
+import { LikedHomesView } from './views/LikedHomesView';
 import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis } from './services/geminiService';
+import { mockHomes } from './mockData';
+
+// Set to true to use mock data for faster frontend testing
+const USE_MOCK_DATA = true;
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
@@ -15,14 +20,38 @@ const App: React.FC = () => {
   const [userQuery, setUserQuery] = useState('');
   const [refineQuery, setRefineQuery] = useState('');
   const [compareList, setCompareList] = useState<Home[]>([]);
+  const [likedHomes, setLikedHomes] = useState<Home[]>([]);
   const [analysisResult, setAnalysisResult] = useState<{ text: string, grounding: any[] } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+
+  // Auto-load mock data on startup if USE_MOCK_DATA is enabled (for testing)
+  useEffect(() => {
+    if (USE_MOCK_DATA && appState === AppState.LANDING) {
+      // Auto-load mock data after a brief delay to simulate real flow
+      const timer = setTimeout(() => {
+        setHomes(mockHomes);
+        setUserQuery('test search');
+        setCurrentIndex(0);
+        setAppState(AppState.BROWSING);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // Only run once on mount
 
   const startDiscovery = async (query: string) => {
     setLoading(true);
     setUserQuery(query);
-    const results = await fetchRecommendations({ query, priorities: [] });
-    setHomes(results);
+    
+    // Use mock data if enabled, otherwise call API
+    if (USE_MOCK_DATA) {
+      // Simulate API delay for realistic feel
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setHomes(mockHomes);
+    } else {
+      const results = await fetchRecommendations({ query, priorities: [] });
+      setHomes(results);
+    }
+    
     setCurrentIndex(0);
     setAppState(AppState.BROWSING);
     setLoading(false);
@@ -33,8 +62,17 @@ const App: React.FC = () => {
     setLoading(true);
     const combinedQuery = `${userQuery}. Additionally: ${refineQuery}`;
     setUserQuery(combinedQuery);
-    const results = await fetchRecommendations({ query: combinedQuery, priorities: [] });
-    setHomes([...homes.slice(0, currentIndex + 1), ...results]);
+    
+    // Use mock data if enabled, otherwise call API
+    if (USE_MOCK_DATA) {
+      // Simulate API delay for realistic feel
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
+    } else {
+      const results = await fetchRecommendations({ query: combinedQuery, priorities: [] });
+      setHomes([...homes.slice(0, currentIndex + 1), ...results]);
+    }
+    
     setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
     setLoading(false);
@@ -53,6 +91,32 @@ const App: React.FC = () => {
     } else {
       setAppState(AppState.LANDING);
     }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleLike = () => {
+    const currentHome = homes[currentIndex];
+    if (currentHome) {
+      // Add to liked homes if not already there
+      setLikedHomes(prev => {
+        if (prev.some(h => h.id === currentHome.id)) {
+          return prev; // Already liked
+        }
+        return [...prev, currentHome];
+      });
+    }
+    // Move to next home
+    handleNext();
+  };
+
+  const handleDislike = () => {
+    // Just move to next home
+    handleNext();
   };
 
   // Improved markdown-like text rendering
@@ -98,6 +162,16 @@ const App: React.FC = () => {
         homes={compareList} 
         onBack={() => setAppState(AppState.BROWSING)} 
         onRemove={(id) => setCompareList(compareList.filter(h => h.id !== id))} 
+      />
+    );
+  }
+
+  if (appState === AppState.LIKED_HOMES) {
+    return (
+      <LikedHomesView 
+        homes={likedHomes} 
+        onBack={() => setAppState(AppState.BROWSING)} 
+        onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))} 
       />
     );
   }
@@ -161,11 +235,12 @@ const App: React.FC = () => {
           {currentHome ? (
             <HomeCard 
               home={currentHome}
-              onSwipeLeft={handleNext}
-              onSwipeRight={handleNext}
-              onDreamHome={(h) => alert(`Saved ${h.title} to Dream Homes!`)}
-              onCompare={(h) => setCompareList([...compareList.filter(x => x.id !== h.id), h])}
-              onShowMap={openMapAnalysis}
+              onSwipeLeft={handleDislike}
+              onSwipeRight={handleLike}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              canGoPrevious={currentIndex > 0}
+              canGoNext={currentIndex < homes.length - 1}
             />
           ) : (
             <div className="text-center p-10 flex flex-col items-center">
@@ -176,17 +251,17 @@ const App: React.FC = () => {
         </div>
 
         {/* Bottom Nav */}
-        <footer className="mt-8 mb-4">
+        <footer className="mt-8 mb-4 flex flex-col gap-3">
           <button 
-            onClick={() => setAppState(AppState.COMPARING)}
+            onClick={() => setAppState(AppState.LIKED_HOMES)}
             className={`w-full h-16 rounded-[2rem] flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl active:scale-95 ${
-              compareList.length > 0 
-              ? 'bg-peri text-white shadow-peri/20' 
+              likedHomes.length > 0 
+              ? 'bg-sage text-white shadow-sage/20' 
               : 'bg-white/40 text-charcoal/20'
             }`}
           >
-            <Layers size={18} />
-            View Comparison {compareList.length > 0 && `(${compareList.length})`}
+            <Heart size={18} />
+            Saved Homes {likedHomes.length > 0 && `(${likedHomes.length})`}
           </button>
         </footer>
 
@@ -267,6 +342,9 @@ const RefreshCw = ({ size, className }: { size: number, className?: string }) =>
 );
 const Layers = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+);
+const Heart = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/></svg>
 );
 const Sparkles = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>

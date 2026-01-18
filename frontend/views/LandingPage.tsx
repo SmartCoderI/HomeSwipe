@@ -40,9 +40,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSubmit, isLoading })
         </header>
 
         <div className="flex-1 flex flex-col items-center">
-          <div className="w-full glass rounded-[3.5rem] p-1 shadow-2xl liquid-shadow relative">
+          <div className="w-full glass rounded-[3rem] p-1 shadow-2xl liquid-shadow relative">
             {/* Inner Content Glass Container */}
-            <div className="bg-white/40 rounded-[3.2rem] p-8 md:p-10 border border-white/60">
+            <div className="bg-white/40 rounded-[2rem] p-8 md:p-10 border border-white/60">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-peri/10 flex items-center justify-center text-peri shadow-inner">
                   <Sparkles size={24} />
@@ -55,7 +55,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSubmit, isLoading })
 
               <form onSubmit={handleFormSubmit} className="space-y-8">
                 <div className="relative">
-                  <div className="glass-dark rounded-[2.5rem] p-1 focus-within:ring-2 focus-within:ring-peri/20 transition-all">
+                  <div className="glass-dark rounded-[2rem] p-1 focus-within:ring-2 focus-within:ring-peri/20 transition-all">
                     <textarea
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
@@ -118,15 +118,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSubmit, isLoading })
             </div>
           </div>
         </div>
-
-        <footer className="mt-auto py-10 text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass border-white/40 shadow-sm animate-float">
-             <div className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse"></div>
-             <span className="text-[9px] text-charcoal/30 uppercase tracking-[0.3em] font-black">
-               Live AI Synthesis Active
-             </span>
-          </div>
-        </footer>
       </div>
     </Layout>
   );

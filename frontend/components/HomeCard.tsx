@@ -6,18 +6,20 @@ interface HomeCardProps {
   home: Home;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
-  onDreamHome: (home: Home) => void;
-  onCompare: (home: Home) => void;
-  onShowMap: (home: Home) => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  canGoPrevious?: boolean;
+  canGoNext?: boolean;
 }
 
 export const HomeCard: React.FC<HomeCardProps> = ({ 
   home, 
   onSwipeLeft, 
-  onSwipeRight, 
-  onDreamHome, 
-  onCompare,
-  onShowMap
+  onSwipeRight,
+  onPrevious,
+  onNext,
+  canGoPrevious = false,
+  canGoNext = false
 }) => {
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
 
@@ -111,24 +113,24 @@ export const HomeCard: React.FC<HomeCardProps> = ({
              </div>
           </div>
 
-          {/* 5. External Listing Link */}
-          <div className="pb-36">
-            <a 
-              href={home.listingUrl} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="block w-full text-center py-5 bg-charcoal text-white rounded-3xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-charcoal/20 active:scale-95"
-            >
-              View Full Listing
-            </a>
-          </div>
+          {/* 5. Spacer for action bar */}
+          <div className="pb-36"></div>
         </div>
       </div>
 
-      {/* Utilities Action Bar */}
+      {/* Action Bar */}
       <div className="absolute bottom-0 left-0 right-0 p-6 glass border-t border-white/40">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
+            {/* Navigation Controls */}
+            <button 
+              onClick={onPrevious}
+              disabled={!canGoPrevious}
+              className="h-16 w-16 bg-white border border-charcoal/20 rounded-2xl flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={20} className="text-charcoal/60 group-active:scale-90 transition-transform" />
+            </button>
+            
             {/* Primary Swipe Controls */}
             <button 
               onClick={() => handleAction('left')}
@@ -144,31 +146,36 @@ export const HomeCard: React.FC<HomeCardProps> = ({
               <ThumbsUp size={20} className="text-sage group-active:scale-90 transition-transform" />
               <span className="text-[9px] font-black uppercase text-sage/60">Like</span>
             </button>
+            
+            <button 
+              onClick={onNext}
+              disabled={!canGoNext}
+              className="h-16 w-16 bg-white border border-charcoal/20 rounded-2xl flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={20} className="text-charcoal/60 group-active:scale-90 transition-transform" />
+            </button>
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            {/* Utilities */}
-            <button 
-              onClick={() => onDreamHome(home)}
-              className="flex-1 h-16 bg-white border border-gold/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
+            {/* Link Buttons */}
+            <a 
+              href={home.listingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 h-16 bg-white border border-peri/20 text-peri rounded-2xl flex flex-col items-center justify-center gap-1 group hover:bg-peri/5 transition-all active:scale-95"
             >
-              <Star size={20} className="text-gold group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-gold/60">Dream Home</span>
-            </button>
-            <button 
-              onClick={() => onCompare(home)}
-              className="flex-1 h-16 bg-white border border-peri/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
+              <LinkIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
+              <span className="text-[9px] font-black uppercase text-peri/60">View Full Listing</span>
+            </a>
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(home.address)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 h-16 bg-white border border-peri/20 rounded-2xl flex flex-col items-center justify-center gap-1 group hover:bg-peri/5 transition-all active:scale-95"
             >
-              <Plus size={20} className="text-peri group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-peri/60">Compare</span>
-            </button>
-            <button 
-              onClick={() => onShowMap(home)}
-              className="flex-1 h-16 bg-white border border-sage/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
-            >
-              <MapIcon size={20} className="text-sage group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-sage/60">Analyze</span>
-            </button>
+              <MapIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
+              <span className="text-[9px] font-black uppercase text-peri/60">Deep Analysis</span>
+            </a>
           </div>
         </div>
       </div>
@@ -183,15 +190,18 @@ const ThumbsDown = ({ size, className }: { size: number, className?: string }) =
 const ThumbsUp = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
 );
-const Star = ({ size, className }: { size: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-);
-const Plus = ({ size, className }: { size: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-);
 const MapIcon = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
 );
+const LinkIcon = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+);
 const CheckCircle = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+);
+const ChevronLeft = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+);
+const ChevronRight = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
 );

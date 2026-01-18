@@ -39,4 +39,5 @@ export enum AppState {
   LANDING = 'LANDING',
   BROWSING = 'BROWSING',
   COMPARING = 'COMPARING',
+  LIKED_HOMES = 'LIKED_HOMES',
 }
