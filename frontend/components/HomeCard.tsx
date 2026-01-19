@@ -10,6 +10,7 @@ interface HomeCardProps {
   onNext?: () => void;
   canGoPrevious?: boolean;
   canGoNext?: boolean;
+  onDeepAnalysis?: () => void;
 }
 
 export const HomeCard: React.FC<HomeCardProps> = ({ 
@@ -19,7 +20,8 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   onPrevious,
   onNext,
   canGoPrevious = false,
-  canGoNext = false
+  canGoNext = false,
+  onDeepAnalysis
 }) => {
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
 
@@ -167,15 +169,13 @@ export const HomeCard: React.FC<HomeCardProps> = ({
               <LinkIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
               <span className="text-[9px] font-black uppercase text-peri/60">View Full Listing</span>
             </a>
-            <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(home.address)}`}
-              target="_blank"
-              rel="noreferrer"
+            <button 
+              onClick={onDeepAnalysis}
               className="flex-1 h-16 bg-white border border-peri/20 rounded-2xl flex flex-col items-center justify-center gap-1 group hover:bg-peri/5 transition-all active:scale-95"
             >
               <MapIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
               <span className="text-[9px] font-black uppercase text-peri/60">Deep Analysis</span>
-            </a>
+            </button>
           </div>
         </div>
       </div>

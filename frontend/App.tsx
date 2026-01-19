@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Home, AppState } from './types';
 import { LandingPage } from './views/LandingPage';
 import { LikedHomesView } from './views/LikedHomesView';
+import { DeepAnalysisView } from './views/DeepAnalysisView';
 import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [refineQuery, setRefineQuery] = useState('');
   const [compareList, setCompareList] = useState<Home[]>([]);
   const [likedHomes, setLikedHomes] = useState<Home[]>([]);
+  const [deepAnalysisHome, setDeepAnalysisHome] = useState<Home | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ text: string, grounding: any[] } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -176,6 +178,15 @@ const App: React.FC = () => {
     );
   }
 
+  if (appState === AppState.DEEP_ANALYSIS && deepAnalysisHome) {
+    return (
+      <DeepAnalysisView 
+        home={deepAnalysisHome} 
+        onBack={() => setAppState(AppState.BROWSING)} 
+      />
+    );
+  }
+
   const currentHome = homes[currentIndex];
 
   return (
@@ -241,6 +252,10 @@ const App: React.FC = () => {
               onNext={handleNext}
               canGoPrevious={currentIndex > 0}
               canGoNext={currentIndex < homes.length - 1}
+              onDeepAnalysis={() => {
+                setDeepAnalysisHome(currentHome);
+                setAppState(AppState.DEEP_ANALYSIS);
+              }}
             />
           ) : (
             <div className="text-center p-10 flex flex-col items-center">

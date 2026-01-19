@@ -5,15 +5,15 @@ export const mockHomes: Home[] = [
   {
     id: "1",
     title: "Modern loft with high ceilings",
-    price: "$899,000",
-    address: "123 Elm Street, Sunnyvale, CA 94087",
+    price: "$1,998,000",
+    address: "1122 Vasquez Ave, Sunnyvale, CA 94086",
     description: "Stunning modern loft featuring high ceilings, open floor plan, and premium finishes throughout. Located in the heart of Sunnyvale with easy access to tech campuses.",
-    imageUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800",
-    listingUrl: "https://www.zillow.com/homes/123-Elm-St-Sunnyvale-CA-94087_rb/",
+    imageUrl: "https://photos.zillowstatic.com/fp/c9282436eb91b715fcba27d6dde03692-cc_ft_1536.webp",
+    listingUrl: "https://www.zillow.com/homedetails/1122-Vasquez-Ave-Sunnyvale-CA-94086/19519571_zpid/",
     specs: {
       beds: 3,
       baths: 2,
-      sqft: 1850
+      sqft: 1372
     },
     insightBullets: {
       style: "Modern minimalist with industrial touches",
