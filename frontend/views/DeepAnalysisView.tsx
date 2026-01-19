@@ -20,7 +20,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({ home, onBack
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const dataLayerRef = useRef<any>(null);
-  const defaultCoordsRef = useRef<{ lat: number; lng: number }>({ lat: 37.37594, lng: -122.05233 });
+  const defaultCoordsRef = useRef<{ lat: number; lng: number }>({ lat: 37.37608, lng: -122.05227 });
   const [loading, setLoading] = useState(true);
   const [floodData, setFloodData] = useState<FloodAnalysisData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +56,8 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({ home, onBack
     // For now, use default coordinates from mockData id1
     // In production, this would come from geocoding
     // Updated coordinates for 1122 Vasquez Ave, Sunnyvale, CA 94086
-    const defaultLat = 37.37594;
-    const defaultLng = -122.05233;
+    const defaultLat = 37.37608;
+    const defaultLng = -122.05227;
     
     // Store default for use in loadFloodData
     defaultCoordsRef.current = { lat: defaultLat, lng: defaultLng };
