@@ -1,18 +1,148 @@
-// FEMA ArcGIS REST API Layer 28 - Flood Zones
-const FEMA_API_BASE = 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28';
+// FEMA ArcGIS REST API Layer 28 - Flood Hazard Zones (NFHL)
+const FEMA_LAYER_28 = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28";
 
-// Simple in-memory cache
 const femaCache = new Map();
 const CACHE_TTL = 90 * 24 * 60 * 60 * 1000; // 90 days
 
+function metersToDegreesLat(m) {
+  return m / 111320; // approx
+}
+
+function metersToDegreesLng(m, lat) {
+  return m / (111320 * Math.cos((lat * Math.PI) / 180));
+}
+
+async function arcgisQuery(params) {
+  const qs = new URLSearchParams(params);
+  const url = `${FEMA_LAYER_28}/query?${qs.toString()}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`FEMA API error: ${res.status} ${res.statusText}`);
+  return await res.json();
+}
+
 /**
- * Query FEMA flood zones for a specific point
- * Uses ArcGIS REST API point-in-polygon query
+ * POINT query: authoritative "what zone is this house in?"
+ * returnGeometry=false for speed/clarity.
+ */
+async function femaPointZone(lat, lng) {
+  const params = {
+    f: "json",
+    geometry: `${lng},${lat}`, // x,y => lng,lat
+    geometryType: "esriGeometryPoint",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", // keep it tight
+    returnGeometry: "false",
+    resultRecordCount: "5",
+  };
+
+  const data = await arcgisQuery(params);
+  const features = data.features || [];
+
+  if (!features.length) return null;
+
+  // Pick "highest risk" if multiple overlap:
+  // Prefer A/V (SFHA) over X.
+  const pick = features
+    .map(f => f.attributes)
+    .sort((a, b) => riskRank(b) - riskRank(a))[0];
+
+  const zone = (pick.FLD_ZONE ?? "").toString().trim().toUpperCase();
+  const sub = (pick.ZONE_SUBTY ?? "").toString().trim().toUpperCase();
+  const sfha = (pick.SFHA_TF ?? "").toString().trim().toUpperCase(); // often "T"/"F"
+
+  const classified = classifyZone(zone, sub, sfha);
+
+  return {
+    fld_zone: zone,
+    zone_subty: sub || null,
+    sfha_tf: sfha || null,
+    ...classified,
+  };
+}
+
+function riskRank(attrs) {
+  const z = (attrs.FLD_ZONE ?? "").toString().trim().toUpperCase();
+  const sub = (attrs.ZONE_SUBTY ?? "").toString().trim().toUpperCase();
+  const sfha = (attrs.SFHA_TF ?? "").toString().trim().toUpperCase();
+
+  const c = classifyZone(z, sub, sfha);
+  // High > Moderate > Minimal > Unknown
+  return c.riskLevel === "high" ? 3 : c.riskLevel === "moderate" ? 2 : c.riskLevel === "minimal" ? 1 : 0;
+}
+
+function classifyZone(zone, zoneSubty, sfhaTf) {
+  const isSFHA = sfhaTf === "T" || zone.startsWith("A") || zone.startsWith("V");
+
+  // 500-year-ish is specifically "0.2% annual chance", often encoded in subtype under Zone X
+  const is500 = zone === "X" && (
+    zoneSubty.includes("0.2") ||
+    zoneSubty.includes("0.2 PCT") ||
+    zoneSubty.includes("0.2 PERCENT") ||
+    zoneSubty.includes("ANNUAL CHANCE 0.2")
+  );
+
+  const floodplain =
+    isSFHA ? "100-year (1% annual chance)" :
+    is500 ? "500-year (0.2% annual chance)" :
+    zone ? "Outside SFHA (check subtype)" :
+    "UNKNOWN";
+
+  const floodType =
+    isSFHA ? "100-year" :
+    is500 ? "500-year" :
+    "none";
+
+  const riskLevel =
+    isSFHA ? "high" :
+    is500 ? "moderate" :
+    "minimal";
+
+  const label = isSFHA ? "Mortgage may require flood insurance (SFHA)" : null;
+
+  return { floodplain, floodType, riskLevel, label };
+}
+
+/**
+ * ENVELOPE query: overlay polygons near the house (visual context).
+ * We filter overlay to match the house’s zone family to prevent weird-looking blobs.
+ */
+async function femaOverlayPolygons(lat, lng, opts = {}) {
+  const radiusMeters = opts.radiusMeters ?? 600; // tweak: 300–800m works well for property UI
+  const dLat = metersToDegreesLat(radiusMeters);
+  const dLng = metersToDegreesLng(radiusMeters, lat);
+
+  const extent = {
+    xmin: lng - dLng,
+    ymin: lat - dLat,
+    xmax: lng + dLng,
+    ymax: lat + dLat,
+    spatialReference: { wkid: 4326 },
+  };
+
+  const params = {
+    f: "geojson",
+    geometry: JSON.stringify(extent),
+    geometryType: "esriGeometryEnvelope",
+    inSR: "4326",
+    spatialRel: "esriSpatialRelIntersects",
+    outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF",
+    returnGeometry: "true",
+    outSR: "4326",
+    where: "1=1",
+  };
+
+  return await arcgisQuery(params);
+}
+
+/**
+ * Main: returns overlay FeatureCollection + a top-level summary for the house.
+ * (GeoJSON allows extra top-level fields; if your frontend dislikes it, return {summary, overlay}.)
  */
 export async function getFloodZones(lat, lng) {
   const cacheKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-  
-  // Check cache
+
   const cached = femaCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     const { timestamp, ...result } = cached;
@@ -20,134 +150,87 @@ export async function getFloodZones(lat, lng) {
   }
 
   try {
-    // ArcGIS REST API query - use extent query to get nearby flood zones
-    // This is more reliable than point-in-polygon for getting surrounding flood zones
-    // Create a small buffer around the point (about 500 meters)
-    const bufferDegrees = 0.005; // approximately 500 meters
-    const extent = {
-      xmin: lng - bufferDegrees,
-      ymin: lat - bufferDegrees,
-      xmax: lng + bufferDegrees,
-      ymax: lat + bufferDegrees,
-      spatialReference: { wkid: 4326 }
+    // 1) Truth at the address
+    const houseZone = await femaPointZone(lat, lng);
+
+    // If FEMA returns nothing, still return an empty overlay with summary
+    if (!houseZone) {
+      const empty = {
+        summary: {
+          found: false,
+          lat, lng,
+          message: "No FEMA flood zone feature found for this point.",
+        },
+        overlay: { type: "FeatureCollection", features: [] },
+      };
+      femaCache.set(cacheKey, { ...empty, timestamp: Date.now() });
+      return empty;
+    }
+
+    // 2) Visual overlay near the house
+    const overlay = await femaOverlayPolygons(lat, lng, { radiusMeters: 600 });
+
+    // 3) Filter overlays to match the house zone family (prevents confusing blobs)
+    const hz = houseZone.fld_zone;
+    const keepFamily = (z) => {
+      if (!z) return false;
+      if (hz.startsWith("A") || hz.startsWith("V")) return z.startsWith("A") || z.startsWith("V");
+      if (hz === "X") return z === "X";
+      return z === hz;
     };
 
-    const params = new URLSearchParams({
-      geometry: JSON.stringify(extent),
-      geometryType: 'esriGeometryEnvelope',
-      spatialRel: 'esriSpatialRelIntersects',
-      outFields: '*',
-      f: 'geojson', // Request GeoJSON format
-      returnGeometry: 'true',
-      where: '1=1' // Get all features in extent
-    });
+    const processed = {
+      type: "FeatureCollection",
+      features: (overlay.features || [])
+        .map((f) => {
+          const props = f.properties || {};
+          const zone = (props.FLD_ZONE ?? props.ZONE ?? "").toString().trim().toUpperCase();
+          const sub = (props.ZONE_SUBTY ?? "").toString().trim().toUpperCase();
+          const sfha = (props.SFHA_TF ?? "").toString().trim().toUpperCase();
 
-    const url = `${FEMA_API_BASE}/query?${params.toString()}`;
-    
-    console.log('FEMA Query URL:', url);
-    console.log('Querying for coordinates:', lat, lng);
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`FEMA API error: ${response.statusText}`);
-    }
+          const cls = classifyZone(zone, sub, sfha);
 
-    const data = await response.json();
-    console.log('FEMA Response - Features found:', data.features?.length || 0);
-    
-    // If no results with extent, try point-in-polygon as fallback
-    if (!data.features || data.features.length === 0) {
-      const pointParams = new URLSearchParams({
-        geometry: JSON.stringify({
-          x: lng,
-          y: lat,
-          spatialReference: { wkid: 4326 }
-        }),
-        geometryType: 'esriGeometryPoint',
-        spatialRel: 'esriSpatialRelIntersects',
-        outFields: '*',
-        f: 'geojson',
-        returnGeometry: 'true'
-      });
-      
-      const pointUrl = `${FEMA_API_BASE}/query?${pointParams.toString()}`;
-      const pointResponse = await fetch(pointUrl);
-      if (pointResponse.ok) {
-        const pointData = await pointResponse.json();
-        if (pointData.features && pointData.features.length > 0) {
-          Object.assign(data, pointData);
-        }
-      }
-    }
-
-    // Process features and add computed properties
-    const processedFeatures = data.features.map(feature => {
-      const zone = feature.properties.ZONE || '';
-      const zoneSubty = feature.properties.ZONE_SUBTY || '';
-      
-      // Determine flood type based on zone code
-      // Zone codes starting with A, V are 100-year flood zones
-      // Zone codes starting with X are 500-year flood zones (0.2% annual chance)
-      const is100Year = /^[AV]/.test(zone) || zoneSubty.includes('100');
-      const is500Year = /^X/.test(zone) || zoneSubty.includes('500') || zoneSubty.includes('0.2%');
-      const hasNoFloodRisk = /^X$/.test(zone) && !zoneSubty;
-
-      const floodType = is100Year ? '100-year' : is500Year ? '500-year' : 'none';
-      
-      // Determine risk level
-      let riskLevel = 'minimal';
-      if (is100Year) {
-        riskLevel = 'high';
-      } else if (is500Year) {
-        riskLevel = 'moderate';
-      }
-
-      // Zone description
-      let zoneDescription = zone;
-      if (zoneSubty) {
-        zoneDescription = `${zone} - ${zoneSubty}`;
-      }
-
-      return {
-        ...feature,
-        properties: {
-          ...feature.properties,
-          floodType,
-          riskLevel,
-          zoneCode: zone,
-          zoneDescription
-        }
-      };
-    });
+          return {
+            ...f,
+            properties: {
+              ...props,
+              FLD_ZONE: zone,
+              ZONE_SUBTY: sub || null,
+              SFHA_TF: sfha || null,
+              ...cls,
+              zoneCode: zone,
+              zoneDescription: sub ? `${zone} - ${sub}` : zone,
+            },
+          };
+        })
+        .filter((f) => keepFamily(f.properties?.FLD_ZONE)),
+    };
 
     const result = {
-      type: 'FeatureCollection',
-      features: processedFeatures
+      summary: {
+        found: true,
+        lat, lng,
+        ...houseZone, // fld_zone, floodType, floodplain, riskLevel, label
+      },
+      overlay: processed,
     };
 
-    // Cache the result
     femaCache.set(cacheKey, { ...result, timestamp: Date.now() });
-
     return result;
-  } catch (error) {
-    console.error('FEMA API error:', error);
-    // Return empty feature collection on error
+  } catch (err) {
+    console.error("FEMA API error:", err);
     return {
-      type: 'FeatureCollection',
-      features: []
+      summary: { found: false, lat, lng, error: String(err?.message || err) },
+      overlay: { type: "FeatureCollection", features: [] },
     };
   }
 }
 
 /**
- * Get FEMA layer information
+ * Optional: layer metadata
  */
 export async function getFEMALayerInfo() {
-  try {
-    const response = await fetch(`${FEMA_API_BASE}?f=json`);
-    return await response.json();
-  } catch (error) {
-    console.error('FEMA layer info error:', error);
-    throw error;
-  }
+  const res = await fetch(`${FEMA_LAYER_28}?f=json`);
+  if (!res.ok) throw new Error(`FEMA layer info error: ${res.statusText}`);
+  return await res.json();
 }
