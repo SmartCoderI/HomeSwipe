@@ -10,10 +10,11 @@ export async function getFloodAnalysis(address) {
   const geocode = await geocodeAddress(address);
 
   // Step 2: Fetch flood zones for the coordinates (cached)
-  const floodZones = await getFloodZones(geocode.lat, geocode.lng);
+  // getFloodZones returns { summary, overlay }
+  const fema = await getFloodZones(geocode.lat, geocode.lng);
 
   return {
     geocode,
-    floodZones
+    fema  // Changed from floodZones to fema to match frontend interface
   };
 }
