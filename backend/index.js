@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { getFloodAnalysis } from './routes/floodAnalysis.js';
+import { getDeepAnalysis } from './routes/deepAnalysis.js';
 
 // Load .env file manually for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,15 @@ if (GOOGLE_API_KEY) {
   console.warn('   Set GOOGLE_MAPS_API_KEY or GOOGLE_GEOCODING_API_KEY in .env file');
 }
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+if (GEMINI_API_KEY) {
+  console.log('✅ Gemini API key loaded successfully');
+  console.log(`   API Key prefix: ${GEMINI_API_KEY.substring(0, 10)}...`);
+} else {
+  console.warn('⚠️ WARNING: No Gemini API key found in environment variables');
+  console.warn('   Set GEMINI_API_KEY or API_KEY in .env file');
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -65,6 +75,23 @@ app.get('/api/flood-analysis', async (req, res) => {
   } catch (error) {
     console.error('Flood analysis error:', error);
     res.status(500).json({ error: 'Failed to get flood analysis' });
+  }
+});
+
+// Deep analysis endpoint (comprehensive analysis with Gemini summary)
+app.get('/api/deep-analysis', async (req, res) => {
+  try {
+    const { address } = req.query;
+    
+    if (!address || typeof address !== 'string') {
+      return res.status(400).json({ error: 'Address parameter is required' });
+    }
+
+    const result = await getDeepAnalysis(address);
+    res.json(result);
+  } catch (error) {
+    console.error('Deep analysis error:', error);
+    res.status(500).json({ error: 'Failed to get deep analysis' });
   }
 });
 
