@@ -1,0 +1,6 @@
+1. User initial input with desired house style
+2. App convert the paragraph needs into a key value pairs formats in json
+3. App use the json payload as the filters to generate a link to zillow or redfin to search about the houses filled in the requirement. (app need to put the filters that available in the real estate websites)
+4. Need to find a way for the app to view the search result on zilllow/redfin, either crawl the result page or use official API calls to do it
+5. Summary the house info, transform the information into json and then display in flush card format. Info should be personalized and then display. 
+6. Provide deep analysis on the house (TBD) 
