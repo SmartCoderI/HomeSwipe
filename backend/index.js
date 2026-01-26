@@ -34,6 +34,7 @@ try {
 
 // NOW import routes after .env is loaded
 import { getFloodAnalysis } from './routes/floodAnalysis.js';
+import { getDeepAnalysis } from './routes/deepAnalysis.js';
 import { searchListings } from './routes/searchListings.js';
 
 // Log API key status on startup
@@ -44,6 +45,15 @@ if (GOOGLE_API_KEY) {
 } else {
   console.warn('⚠️ WARNING: No Google Maps API key found in environment variables');
   console.warn('   Set GOOGLE_MAPS_API_KEY or GOOGLE_GEOCODING_API_KEY in .env file');
+}
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+if (GEMINI_API_KEY) {
+  console.log('✅ Gemini API key loaded successfully');
+  console.log(`   API Key prefix: ${GEMINI_API_KEY.substring(0, 10)}...`);
+} else {
+  console.warn('⚠️ WARNING: No Gemini API key found in environment variables');
+  console.warn('   Set GEMINI_API_KEY or API_KEY in .env file');
 }
 
 const app = express();
@@ -74,8 +84,25 @@ app.get('/api/flood-analysis', async (req, res) => {
   }
 });
 
-// Search listings endpoint
+// Search listings endpoint (your feature)
 app.post('/api/search-listings', searchListings);
+
+// Deep analysis endpoint (master feature - comprehensive analysis with Gemini summary)
+app.get('/api/deep-analysis', async (req, res) => {
+  try {
+    const { address } = req.query;
+
+    if (!address || typeof address !== 'string') {
+      return res.status(400).json({ error: 'Address parameter is required' });
+    }
+
+    const result = await getDeepAnalysis(address);
+    res.json(result);
+  } catch (error) {
+    console.error('Deep analysis error:', error);
+    res.status(500).json({ error: 'Failed to get deep analysis' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
