@@ -71,7 +71,7 @@ export const extractUserPreferences = async (query: string): Promise<UserSearchP
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-flash-lite",
       contents: `Analyze this real estate search query and extract ALL relevant preferences as a JSON object.
 
 User query: "${query}"
@@ -363,7 +363,7 @@ const generateMockListings = async (prefs: UserPreferences): Promise<Home[]> => 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-flash-lite",
       contents: `You are a precision real estate agent. Generate 5 realistic real estate listings matching these user preferences: "${prefs.query}".
       
       CRITICAL: 
@@ -389,7 +389,7 @@ export const fetchMapAnalysis = async (home: Home, userQuery: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-flash-lite",
       contents: `Analyze ${home.address} for a user with these priorities: ${userQuery}.
       Provide structured markdown with headers:
       - ## 🌲 Nature & Parks

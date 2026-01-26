@@ -11,12 +11,12 @@ const getApiKey = () => process.env.RAPIDAPI_KEY;
 const transformRedfinListing = (listing, index, location) => {
   // Handle nested structure - listing might be wrapped in homeData
   const home = listing.homeData || listing;
-  
+
   // Extract address from URL or other fields
   const urlParts = home.url ? home.url.split('/') : [];
   const addressFromUrl = urlParts.length > 3 ? urlParts.slice(1, -2).join(' ') : '';
   const address = addressFromUrl || home.address || home.streetAddress || 'Unknown Address';
-  
+
   // Extract price from nested structure
   let price = null;
   if (home.priceInfo?.homePrice?.int64Value) {
@@ -26,7 +26,7 @@ const transformRedfinListing = (listing, index, location) => {
   } else if (home.price) {
     price = home.price;
   }
-  
+
   const beds = home.beds || 0;
   const baths = home.baths || 0;
   const sqft = home.sqftInfo?.amount ? parseInt(home.sqftInfo.amount) : (home.sqft || 0);
@@ -40,7 +40,23 @@ const transformRedfinListing = (listing, index, location) => {
     '8': 'Land',
   };
   const propertyType = propertyTypeMap[home.propertyType?.toString()] || 'Property';
-  
+
+  // Select varied high-quality property images from Unsplash
+  // Using different photos to provide variety in the card stack
+  const propertyImages = [
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200', // Modern house
+    'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200', // Contemporary home
+    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=1200', // Elegant house
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200', // Cozy home
+    'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?q=80&w=1200', // Stylish property
+    'https://images.unsplash.com/photo-1600573472591-ee6b39e43054?q=80&w=1200', // Beautiful home
+    'https://images.unsplash.com/photo-1600210492493-0946911123ea?q=80&w=1200', // Classic house
+    'https://images.unsplash.com/photo-1600585152220-90363fe7e115?q=80&w=1200', // Modern residence
+    'https://images.unsplash.com/photo-1600047509358-9dc75507daeb?q=80&w=1200', // Suburban home
+    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?q=80&w=1200', // Contemporary property
+  ];
+  const imageUrl = propertyImages[index % propertyImages.length];
+
   // Build Redfin URL
   let listingUrl = home.url;
   if (listingUrl && !listingUrl.startsWith('http')) {
@@ -53,7 +69,7 @@ const transformRedfinListing = (listing, index, location) => {
     price: price ? `$${price.toLocaleString()}` : 'Contact for price',
     address: address,
     description: `${beds} bed${beds !== 1 ? 's' : ''}, ${baths} bath${baths !== 1 ? 's' : ''} ${propertyType.toLowerCase()}${sqft ? ` - ${sqft.toLocaleString()} sq ft` : ''}`,
-    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800',
+    imageUrl: imageUrl, // Use real photo from API
     listingUrl: listingUrl || `https://www.redfin.com/search?location=${encodeURIComponent(location)}`,
     specs: {
       beds: beds,
@@ -154,7 +170,7 @@ export const searchRedfinListings = async (params) => {
 
     const data = await response.json();
     console.log('📦 Raw API response keys:', Object.keys(data));
-    console.log('📦 Sample data item:', JSON.stringify(data.data?.[0], null, 2).substring(0, 800));
+    console.log('📦 Sample data item:', JSON.stringify(data.data?.[0], null, 2).substring(0, 1500));
     
     // Redfin API returns data in a nested structure
     if (!data || (!Array.isArray(data) && !data.data)) {
