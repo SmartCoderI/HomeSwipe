@@ -4,10 +4,8 @@ import cors from 'cors';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { getFloodAnalysis } from './routes/floodAnalysis.js';
-import { getDeepAnalysis } from './routes/deepAnalysis.js';
 
-// Load .env file manually for ES modules
+// Load .env file manually for ES modules BEFORE importing other modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -16,13 +14,16 @@ try {
   envFile.split('\n').forEach(line => {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
-      const match = trimmed.match(/^\s*([\w.-]+)\s*=\s*(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        let value = match[2].trim();
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        const cleanKey = key.trim();
+        let value = valueParts.join('=').trim();
         // Remove quotes if present
         value = value.replace(/^["']|["']$/g, '');
-        process.env[key] = value;
+        process.env[cleanKey] = value;
+        if (cleanKey === 'RAPIDAPI_KEY' || cleanKey === 'GOOGLE_MAPS_API_KEY') {
+          console.log(`✅ Loaded ${cleanKey}`);
+        }
       }
     }
   });
@@ -30,6 +31,11 @@ try {
   // .env file doesn't exist, that's okay
   console.log('No .env file found, using environment variables only');
 }
+
+// NOW import routes after .env is loaded
+import { getFloodAnalysis } from './routes/floodAnalysis.js';
+import { getDeepAnalysis } from './routes/deepAnalysis.js';
+import { searchListings } from './routes/searchListings.js';
 
 // Log API key status on startup
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_GEOCODING_API_KEY;
@@ -78,11 +84,14 @@ app.get('/api/flood-analysis', async (req, res) => {
   }
 });
 
-// Deep analysis endpoint (comprehensive analysis with Gemini summary)
+// Search listings endpoint (your feature)
+app.post('/api/search-listings', searchListings);
+
+// Deep analysis endpoint (master feature - comprehensive analysis with Gemini summary)
 app.get('/api/deep-analysis', async (req, res) => {
   try {
     const { address } = req.query;
-    
+
     if (!address || typeof address !== 'string') {
       return res.status(400).json({ error: 'Address parameter is required' });
     }

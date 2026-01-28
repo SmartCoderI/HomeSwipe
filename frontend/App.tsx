@@ -7,11 +7,11 @@ import { DeepAnalysisView } from './views/DeepAnalysisView';
 import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
-import { fetchRecommendations, fetchMapAnalysis } from './services/geminiService';
+import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
 import { mockHomes } from './mockData';
 
 // Set to true to use mock data for faster frontend testing
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
@@ -25,6 +25,8 @@ const App: React.FC = () => {
   const [deepAnalysisHome, setDeepAnalysisHome] = useState<Home | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ text: string, grounding: any[] } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  // NEW: Track user preferences as structured JSON object
+  const [userPreferences, setUserPreferences] = useState<UserSearchPreferences | null>(null);
 
   // Auto-load mock data on startup if USE_MOCK_DATA is enabled (for testing)
   useEffect(() => {
@@ -43,17 +45,18 @@ const App: React.FC = () => {
   const startDiscovery = async (query: string) => {
     setLoading(true);
     setUserQuery(query);
-    
+
     // Use mock data if enabled, otherwise call API
     if (USE_MOCK_DATA) {
       // Simulate API delay for realistic feel
       await new Promise(resolve => setTimeout(resolve, 500));
       setHomes(mockHomes);
     } else {
-      const results = await fetchRecommendations({ query, priorities: [] });
-      setHomes(results);
+      const { listings, preferences } = await fetchRecommendations({ query, priorities: [] });
+      setHomes(listings);
+      setUserPreferences(preferences); // Store preferences for later updates
     }
-    
+
     setCurrentIndex(0);
     setAppState(AppState.BROWSING);
     setLoading(false);
@@ -64,17 +67,22 @@ const App: React.FC = () => {
     setLoading(true);
     const combinedQuery = `${userQuery}. Additionally: ${refineQuery}`;
     setUserQuery(combinedQuery);
-    
+
     // Use mock data if enabled, otherwise call API
     if (USE_MOCK_DATA) {
       // Simulate API delay for realistic feel
       await new Promise(resolve => setTimeout(resolve, 500));
       setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
     } else {
-      const results = await fetchRecommendations({ query: combinedQuery, priorities: [] });
-      setHomes([...homes.slice(0, currentIndex + 1), ...results]);
+      // Pass existing preferences to merge instead of re-extracting everything
+      const { listings, preferences } = await fetchRecommendations(
+        { query: refineQuery, priorities: [] },
+        userPreferences || undefined
+      );
+      setUserPreferences(preferences); // Update with merged preferences
+      setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
     }
-    
+
     setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
     setLoading(false);
@@ -218,20 +226,49 @@ const App: React.FC = () => {
           </button>
         </header>
 
+        {/* User Preferences Display */}
+        {userPreferences && Object.keys(userPreferences).length > 1 && (
+          <div className="mb-4 glass p-4 rounded-2xl border border-peri/10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-peri animate-pulse" />
+              <h3 className="text-[9px] font-black uppercase text-peri/60 tracking-[0.2em]">
+                Your Preferences
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(userPreferences)
+                .filter(([key]) => key !== 'originalQuery')
+                .map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="px-3 py-1.5 bg-white/60 rounded-full border border-peri/20"
+                  >
+                    <span className="text-[10px] font-bold text-charcoal/60">
+                      {key.replace(/_/g, ' ')}:{' '}
+                    </span>
+                    <span className="text-[10px] font-black text-peri">
+                      {typeof value === 'boolean' ? (value ? '✓' : '✗') : String(value)}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Refinement Area */}
         <div className="mb-6">
           <div className="glass p-2.5 rounded-3xl flex items-center gap-3 border border-white/60 shadow-lg shadow-peri/5">
             <div className="pl-3">
               <Sparkles size={16} className="text-peri-light" />
             </div>
-            <input 
+            <input
               value={refineQuery}
               onChange={(e) => setRefineQuery(e.target.value)}
               placeholder="Refine search... (e.g. 'pet friendly')"
               className="flex-1 bg-transparent px-1 py-2 text-xs font-bold focus:outline-none placeholder:text-charcoal/20"
               onKeyDown={(e) => e.key === 'Enter' && refineResults()}
             />
-            <button 
+            <button
               onClick={refineResults}
               disabled={loading}
               className="px-4 py-2 bg-peri text-white rounded-2xl shadow-xl shadow-peri/30 disabled:opacity-50 active:scale-95 transition-all"
@@ -244,7 +281,7 @@ const App: React.FC = () => {
         {/* Card Area */}
         <div className="flex-1 flex items-center justify-center relative">
           {currentHome ? (
-            <HomeCard 
+            <HomeCard
               home={currentHome}
               onSwipeLeft={handleDislike}
               onSwipeRight={handleLike}
@@ -252,6 +289,7 @@ const App: React.FC = () => {
               onNext={handleNext}
               canGoPrevious={currentIndex > 0}
               canGoNext={currentIndex < homes.length - 1}
+              isBestMatch={currentIndex === 0} // First card is best match
               onDeepAnalysis={() => {
                 setDeepAnalysisHome(currentHome);
                 setAppState(AppState.DEEP_ANALYSIS);

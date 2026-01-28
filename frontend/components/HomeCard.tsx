@@ -11,17 +11,19 @@ interface HomeCardProps {
   canGoPrevious?: boolean;
   canGoNext?: boolean;
   onDeepAnalysis?: () => void;
+  isBestMatch?: boolean; // Flag to show "Best Match" badge
 }
 
-export const HomeCard: React.FC<HomeCardProps> = ({ 
-  home, 
-  onSwipeLeft, 
+export const HomeCard: React.FC<HomeCardProps> = ({
+  home,
+  onSwipeLeft,
   onSwipeRight,
   onPrevious,
   onNext,
   canGoPrevious = false,
   canGoNext = false,
-  onDeepAnalysis
+  onDeepAnalysis,
+  isBestMatch = false
 }) => {
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
 
@@ -45,20 +47,32 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       <div className="h-full overflow-y-auto no-scrollbar bg-white/40">
         {/* 1. Hero Image */}
         <div className="relative h-64 flex-shrink-0">
-          <img 
-            src={home.imageUrl} 
-            alt={home.title} 
+          <img
+            src={home.imageUrl}
+            alt={home.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
+
+          {/* Best Match Badge */}
+          {isBestMatch && (
+            <div className="absolute top-4 right-4 px-4 py-2 bg-sage rounded-full shadow-lg border-2 border-white">
+              <div className="flex items-center gap-2">
+                <Star size={14} className="text-white fill-white" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white">
+                  Best Match
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2. Core Facts */}
         <div className="px-8 pt-6">
           <div className="flex justify-between items-start mb-2">
             <div className="flex-1 pr-4">
-              <h2 className="text-2xl font-black leading-tight text-charcoal tracking-tight">{home.title}</h2>
-              <p className="text-charcoal/40 text-[11px] font-bold uppercase tracking-wider">{home.address}</p>
+              <h2 className="text-2xl font-black leading-tight text-charcoal tracking-tight">{home.address}</h2>
+              <p className="text-charcoal/40 text-[11px] font-bold uppercase tracking-wider">{home.title}</p>
             </div>
             <div className="text-2xl font-black text-peri">{home.price}</div>
           </div>
@@ -204,4 +218,7 @@ const ChevronLeft = ({ size, className }: { size: number, className?: string }) 
 );
 const ChevronRight = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+);
+const Star = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 );
