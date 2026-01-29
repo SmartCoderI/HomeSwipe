@@ -11,6 +11,7 @@ import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from '.
 import { mockHomes } from './mockData';
 
 // Set to true to use mock data for faster frontend testing
+//const USE_MOCK_DATA = true;
 const USE_MOCK_DATA = false;
 
 const App: React.FC = () => {

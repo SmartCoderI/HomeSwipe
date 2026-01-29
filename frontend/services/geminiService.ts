@@ -296,29 +296,17 @@ const promptUserForLocation = (): string | null => {
 
 /**
  * Fetch real listings from backend API (which calls Redfin)
- * OPTIMIZED: Runs preference extraction and API search in parallel
+ * Backend handles: preference extraction, mapping to Redfin API params, and API call
  */
 export const fetchRecommendations = async (prefs: UserPreferences, existingPrefs?: UserSearchPreferences): Promise<{ listings: Home[], preferences: UserSearchPreferences }> => {
   try {
     console.log('🔍 Fetching real listings for:', prefs.query);
-
-    // OPTIMIZATION: Extract preferences (runs in parallel with backend processing later)
-    const userPrefs = await extractUserPreferences(prefs.query);
-
-    // Merge with existing preferences if refining
-    const mergedPrefs = existingPrefs ? mergePreferences(existingPrefs, userPrefs) : userPrefs;
-
-    // Verify we have a location
-    if (!mergedPrefs.location) {
-      console.error('❌ No location found in user query. Query must include a city/state (e.g., "Sacramento, CA")');
-      return { listings: [], preferences: mergedPrefs };
+    if (existingPrefs) {
+      console.log('🔍 Merging with existing preferences');
     }
 
-    console.log(`📍 Location: ${mergedPrefs.location}, fetching listings...`);
-
-    // Extract API params from preferences
-    const apiParams = extractApiParams(mergedPrefs);
-
+    // Call backend with query and optional existing preferences
+    // Backend will handle preference extraction and Redfin API mapping
     const response = await fetch('http://localhost:3001/api/search-listings', {
       method: 'POST',
       headers: {
@@ -326,26 +314,30 @@ export const fetchRecommendations = async (prefs: UserPreferences, existingPrefs
       },
       body: JSON.stringify({
         query: prefs.query,
-        location: mergedPrefs.location,
-        ...apiParams,
-        limit: 20, // Get more listings for better ranking
+        existingPreferences: existingPrefs || null,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API error: ${response.status}`);
     }
 
     const data = await response.json();
 
     if (data.success && data.listings) {
-      console.log(`✅ Got ${data.listings.length} listings, ranking by preferences...`);
-      // Rank ALL listings based on preference JSON object (not just top 3)
-      const rankedListings = rankListingsByPreferences(data.listings, mergedPrefs);
-      return { listings: rankedListings, preferences: mergedPrefs };
+      console.log(`✅ Got ${data.listings.length} listings from backend`);
+      console.log(`✅ Preferences extracted by backend:`, JSON.stringify(data.preferences, null, 2));
+      
+      // Rank listings based on preferences returned from backend
+      const rankedListings = rankListingsByPreferences(data.listings, data.preferences);
+      return { listings: rankedListings, preferences: data.preferences };
     } else {
       console.warn('⚠️ No listings found, returning empty array');
-      return { listings: [], preferences: mergedPrefs };
+      return { 
+        listings: [], 
+        preferences: data.preferences || { originalQuery: prefs.query } 
+      };
     }
   } catch (error) {
     console.error('❌ Error fetching recommendations:', error);

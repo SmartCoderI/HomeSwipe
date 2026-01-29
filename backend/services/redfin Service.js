@@ -145,7 +145,7 @@ export const searchRedfinListings = async (params) => {
     if (bathrooms) queryParams.min_baths = bathrooms;
 
     // Build URL
-    const url = new URL(`https://${RAPIDAPI_HOST}/1.0/redfin/search/location/for-sale`);
+    const url = new URL(`https://${RAPIDAPI_HOST}/1.1/redfin/search/location/for-sale`);
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
     });
@@ -158,43 +158,106 @@ export const searchRedfinListings = async (params) => {
       },
     };
 
-    console.log(`📡 Calling API: ${url.toString()}`);
+    console.log(`📡 Calling Redfin API: ${url.toString()}`);
+    console.log(`📡 Request params:`, JSON.stringify(queryParams, null, 2));
+    
     const response = await fetch(url.toString(), options);
+    
+    // Log response status and headers
+    console.log(`📡 Redfin API Response Status: ${response.status} ${response.statusText}`);
+    console.log(`📡 Redfin API Response Headers:`, Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       console.error(`❌ Redfin API error: ${response.status} ${response.statusText}`);
       const errorText = await response.text();
-      console.error('Error details:', errorText);
-      throw new Error(`API error: ${response.status}`);
+      console.error('❌ Redfin API Error Response Body:', errorText);
+      console.error('❌ Redfin API Error - Full URL:', url.toString());
+      console.error('❌ Redfin API Error - Request Headers:', JSON.stringify(options.headers, null, 2));
+      throw new Error(`Redfin API error: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    const data = await response.json();
-    console.log('📦 Raw API response keys:', Object.keys(data));
-    console.log('📦 Sample data item:', JSON.stringify(data.data?.[0], null, 2).substring(0, 1500));
+    // Parse response
+    let data;
+    let responseText;
+    try {
+      responseText = await response.text();
+      console.log(`📡 Redfin API Response Body Length: ${responseText.length} characters`);
+      console.log(`📡 Redfin API Response Body Preview (first 500 chars):`, responseText.substring(0, 500));
+      
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ Redfin API Response Parse Error:', parseError.message);
+      console.error('❌ Redfin API Response (raw):', responseText || 'Unable to read response');
+      throw new Error(`Failed to parse Redfin API response: ${parseError.message}`);
+    }
+
+    // Log response structure
+    console.log('📦 Redfin API Response Type:', typeof data);
+    console.log('📦 Redfin API Response Keys:', Object.keys(data || {}));
+    console.log('📦 Redfin API Response Structure:', JSON.stringify(data, null, 2).substring(0, 1000));
+    
+    // Check for error messages in successful response
+    if (data.error || data.message || data.errors) {
+      console.error('⚠️ Redfin API returned error in response body:', JSON.stringify(data.error || data.message || data.errors, null, 2));
+    }
     
     // Redfin API returns data in a nested structure
     if (!data || (!Array.isArray(data) && !data.data)) {
-      console.warn('⚠️ Unexpected response format');
+      console.warn('⚠️ Redfin API - Unexpected response format');
+      console.warn('⚠️ Redfin API - Expected array or object with data property');
+      console.warn('⚠️ Redfin API - Actual response:', JSON.stringify(data, null, 2));
       return [];
     }
 
     // Extract array from either root level or data.data
     let listings = Array.isArray(data) ? data : (data.data || []);
     
-    console.log(`📦 API returned ${listings.length} results, limiting to ${limit}`);
+    if (listings.length === 0) {
+      console.warn('⚠️ Redfin API - No listings returned (empty array)');
+      console.warn('⚠️ Redfin API - Search params were:', JSON.stringify(queryParams, null, 2));
+      console.warn('⚠️ Redfin API - Full response:', JSON.stringify(data, null, 2).substring(0, 2000));
+    } else {
+      console.log(`📦 Redfin API returned ${listings.length} results, limiting to ${limit}`);
+      console.log('📦 Redfin API - Sample listing structure:', JSON.stringify(listings[0], null, 2).substring(0, 1500));
+    }
     
     // Transform results to our Home interface format - only slice limit amount
     const homes = listings
       .slice(0, limit)
       .map((listing, index) => {
-        const transformed = transformRedfinListing(listing, index, location);
-        if (index === 0) {
-          console.log('🏠 Transformed listing:', JSON.stringify(transformed, null, 2).substring(0, 600));
+        try {
+          const transformed = transformRedfinListing(listing, index, location);
+          if (index === 0) {
+            console.log('🏠 Redfin API - Transformed listing (first):', JSON.stringify(transformed, null, 2).substring(0, 600));
+          }
+          return transformed;
+        } catch (transformError) {
+          console.error(`❌ Redfin API - Error transforming listing at index ${index}:`, transformError.message);
+          console.error(`❌ Redfin API - Problematic listing data:`, JSON.stringify(listing, null, 2).substring(0, 1000));
+          // Return a fallback listing instead of crashing
+          return {
+            id: `redfin-error-${index}`,
+            title: 'Property',
+            price: 'Contact for price',
+            address: 'Address unavailable',
+            description: 'Listing data unavailable',
+            imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200',
+            listingUrl: `https://www.redfin.com/search?location=${encodeURIComponent(location)}`,
+            specs: { beds: 0, baths: 0, sqft: 0 },
+            insightBullets: { style: 'Unknown', vibe: location, climateRisk: 'Unknown', safety: 'Unknown', financials: 'Unknown' },
+            matchInsights: ['Listing data unavailable'],
+            analysis: { nature: 'Unknown', commute: 'Unknown', safety: 'Unknown', schools: 'Unknown' },
+          };
         }
-        return transformed;
-      });
+      })
+      .filter(Boolean); // Remove any null/undefined entries
 
-    console.log(`✅ Returning ${homes.length} listings`);
+    if (homes.length === 0) {
+      console.warn('⚠️ Redfin API - No valid listings after transformation');
+      console.warn('⚠️ Redfin API - Original listings count:', listings.length);
+    }
+
+    console.log(`✅ Redfin API - Successfully returning ${homes.length} transformed listings`);
     return homes;
   } catch (error) {
     console.error('❌ Error fetching from Redfin API:', error.message);
