@@ -241,7 +241,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({ home, onBack
               <ArrowLeft size={20} className="text-charcoal/60" />
             </button>
             <div className="flex flex-col">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-peri-light/60">Deep Analysis</h2>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-peri-light/60">Summary</h2>
               <span className="text-[10px] font-black text-charcoal/40 uppercase tracking-widest">{home.address}</span>
             </div>
           </div>
@@ -279,94 +279,6 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({ home, onBack
                     {analysisData.summary || 'Summary unavailable.'}
                   </div>
                 </div>
-              </div>
-
-              {/* Data Sources */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-widest text-charcoal/60 mb-4">
-                  Data Sources
-                </h3>
-
-                {/* Flood Zone */}
-                {analysisData.data.flood && (
-                  <DataCard
-                    title="Flood Zone"
-                    data={analysisData.data.flood}
-                    formatter={formatters.flood}
-                  />
-                )}
-
-                {/* Fire Hazard */}
-                {analysisData.data.fire && (
-                  <DataCard
-                    title="Fire Hazard"
-                    data={analysisData.data.fire}
-                    formatter={formatters.fire}
-                  />
-                )}
-
-                {/* Earthquake Risk */}
-                {analysisData.data.earthquake && (
-                  <DataCard
-                    title="Earthquake Risk"
-                    data={analysisData.data.earthquake}
-                    formatter={formatters.earthquake}
-                  />
-                )}
-
-                {/* Crime */}
-                {analysisData.data.crime && (
-                  <DataCard
-                    title="Crime"
-                    data={analysisData.data.crime}
-                    formatter={formatters.crime}
-                  />
-                )}
-
-                {/* Schools */}
-                {analysisData.data.schools && (
-                  <DataCard
-                    title="Schools"
-                    data={analysisData.data.schools}
-                    formatter={formatters.schools}
-                  />
-                )}
-
-                {/* Hospitals */}
-                {analysisData.data.hospitals && (
-                  <DataCard
-                    title="Hospitals"
-                    data={analysisData.data.hospitals}
-                    formatter={formatters.hospitals}
-                  />
-                )}
-
-                {/* Transit */}
-                {analysisData.data.transit && (
-                  <DataCard
-                    title="Transit Accessibility"
-                    data={analysisData.data.transit}
-                    formatter={formatters.transit}
-                  />
-                )}
-
-                {/* Green Space */}
-                {analysisData.data.greenSpace && (
-                  <DataCard
-                    title="Green Space"
-                    data={analysisData.data.greenSpace}
-                    formatter={formatters.greenSpace}
-                  />
-                )}
-
-                {/* Superfund */}
-                {analysisData.data.superfund && (
-                  <DataCard
-                    title="Superfund Sites"
-                    data={analysisData.data.superfund}
-                    formatter={formatters.superfund}
-                  />
-                )}
               </div>
             </div>
           )}

@@ -18,9 +18,13 @@ export const mockHomes: Home[] = [
     insightBullets: {
       style: "Modern minimalist with industrial touches",
       vibe: "Urban chic, perfect for tech professionals",
-      climateRisk: "Low - well-insulated, efficient HVAC",
-      safety: "Very safe - gated community, 24/7 security",
-      financials: "Property tax ~$9K/year, HOA $350/month"
+      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, No nearby earthquake faults",
+      safety: "Very safe - gated community, 24/7 security. Crime rate 40% below national average",
+      financials: "Property tax ~$9K/year, HOA $350/month",
+      schools: "Cherry Chase Elementary (9/10) - 0.5 miles, Sunnyvale Middle (8/10) - 1.2 miles",
+      hospitals: "El Camino Hospital - 2.3 miles, Stanford Health Care - 8 miles",
+      transit: "Sunnyvale Caltrain - 5 min walk, VTA Light Rail - 10 min walk",
+      greenSpace: "Ortega Park - 0.3 miles, Baylands Park - 2 miles"
     },
     matchInsights: [
       "5 min walk to Sunnyvale Caltrain station",
@@ -50,9 +54,13 @@ export const mockHomes: Home[] = [
     insightBullets: {
       style: "Classic Craftsman with modern updates",
       vibe: "Family-friendly, quiet suburban feel",
-      climateRisk: "Low - roof replaced 2020, updated insulation",
-      safety: "Excellent - family neighborhood, active community watch",
-      financials: "Property tax ~$11K/year, No HOA"
+      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, Liquefaction zone: Not identified",
+      safety: "Excellent - family neighborhood, active community watch. One of safest neighborhoods in Sunnyvale",
+      financials: "Property tax ~$11K/year, No HOA",
+      schools: "Bishop Elementary (10/10) - 0.3 miles, Sunnyvale High (9/10) - 1.5 miles",
+      hospitals: "El Camino Hospital - 3.1 miles, Kaiser Permanente - 4.2 miles",
+      transit: "VTA Bus Stop - 2 min walk, Sunnyvale Caltrain - 12 min drive",
+      greenSpace: "Washington Park - 10 min walk, Las Palmas Park - 0.8 miles"
     },
     matchInsights: [
       "10 min walk to Washington Park",
@@ -82,9 +90,13 @@ export const mockHomes: Home[] = [
     insightBullets: {
       style: "Sleek contemporary with smart home features",
       vibe: "Modern urban living, low maintenance",
-      climateRisk: "Very low - new construction standards, energy efficient",
-      safety: "Secure building access, well-lit parking",
-      financials: "Property tax ~$8K/year, HOA $420/month"
+      risk: "Flood Zone X (minimal risk), Fire hazard: Very low, No Superfund sites within 10 miles, No nearby faults",
+      safety: "Secure building access, well-lit parking. Gated community with security cameras",
+      financials: "Property tax ~$8K/year, HOA $420/month",
+      schools: "Cumberland Elementary (8/10) - 0.6 miles, Cupertino High (9/10) - 3.2 miles",
+      hospitals: "El Camino Hospital - 1.8 miles, Stanford Health Care - 9 miles",
+      transit: "Sunnyvale Caltrain - 7 min walk, VTA Light Rail - 5 min walk",
+      greenSpace: "Las Palmas Park - 0.5 miles, Sunnyvale Baylands - 3.2 miles"
     },
     matchInsights: [
       "2 min walk to Whole Foods and coffee shops",
@@ -114,9 +126,13 @@ export const mockHomes: Home[] = [
     insightBullets: {
       style: "Luxury modern with premium materials",
       vibe: "Upscale living, concierge service available",
-      climateRisk: "Minimal - premium construction, excellent insulation",
-      safety: "High-end security system, secure parking garage",
-      financials: "Property tax ~$14.5K/year, HOA $680/month"
+      risk: "Flood Zone X (minimal risk), Fire hazard: Moderate (hillside area), No Superfund sites nearby, 2 faults within 5 miles",
+      safety: "High-end security system, secure parking garage. Top-tier security with 24/7 surveillance",
+      financials: "Property tax ~$14.5K/year, HOA $680/month",
+      schools: "San Miguel Elementary (10/10) - 0.4 miles, Homestead High (9/10) - 2.1 miles",
+      hospitals: "El Camino Hospital - 2.8 miles, Stanford Health Care - 7.5 miles",
+      transit: "VTA Light Rail - 8 min drive, Sunnyvale Caltrain - 15 min drive",
+      greenSpace: "Rooftop terrace access, Santa Cruz Mountain views. Rancho San Antonio - 4 miles"
     },
     matchInsights: [
       "12 min drive to Apple Infinite Loop",
@@ -146,9 +162,13 @@ export const mockHomes: Home[] = [
     insightBullets: {
       style: "Charming bungalow with vintage character",
       vibe: "Walkable urban neighborhood, close to amenities",
-      climateRisk: "Low - recently updated HVAC and windows",
-      safety: "Safe neighborhood, well-maintained streets",
-      financials: "Property tax ~$9.7K/year, No HOA"
+      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, No nearby faults identified",
+      safety: "Safe neighborhood, well-maintained streets. Active neighborhood watch, family-oriented community",
+      financials: "Property tax ~$9.7K/year, No HOA",
+      schools: "San Miguel Elementary (9/10) - 0.2 miles, Fremont High (8/10) - 1.8 miles",
+      hospitals: "El Camino Hospital - 2.5 miles, Kaiser Permanente - 3.8 miles",
+      transit: "Caltrain station - 8 min walk, VTA Bus - 3 min walk",
+      greenSpace: "Community gardens nearby, Tree-lined streets. Washington Park - 0.6 miles"
     },
     matchInsights: [
       "5 min walk to downtown Sunnyvale restaurants",

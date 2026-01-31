@@ -72,7 +72,6 @@ export const HomeCard: React.FC<HomeCardProps> = ({
           <div className="flex justify-between items-start mb-2">
             <div className="flex-1 pr-4">
               <h2 className="text-2xl font-black leading-tight text-charcoal tracking-tight">{home.address}</h2>
-              <p className="text-charcoal/40 text-[11px] font-bold uppercase tracking-wider">{home.title}</p>
             </div>
             <div className="text-2xl font-black text-peri">{home.price}</div>
           </div>
@@ -102,17 +101,33 @@ export const HomeCard: React.FC<HomeCardProps> = ({
                 <div className="w-1.5 h-1.5 rounded-full bg-peri mt-1.5 flex-shrink-0" />
                 <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Vibe: <span className="text-charcoal/80">{home.insightBullets.vibe}</span></p>
              </div>
-             <div className="flex items-start gap-2">
+             <div className="flex items-start gap-2 col-span-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-coral mt-1.5 flex-shrink-0" />
-                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Risk: <span className="text-charcoal/80">{home.insightBullets.climateRisk}</span></p>
+                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Risk: <span className="text-charcoal/80">{home.insightBullets.risk}</span></p>
              </div>
-             <div className="flex items-start gap-2">
+             <div className="flex items-start gap-2 col-span-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-sage mt-1.5 flex-shrink-0" />
                 <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Safety: <span className="text-charcoal/80">{home.insightBullets.safety}</span></p>
              </div>
              <div className="flex items-start gap-2 col-span-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gold mt-1.5 flex-shrink-0" />
                 <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Financials: <span className="text-charcoal/80">{home.insightBullets.financials}</span></p>
+             </div>
+             <div className="flex items-start gap-2 col-span-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-peri mt-1.5 flex-shrink-0" />
+                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Schools: <span className="text-charcoal/80">{home.insightBullets.schools}</span></p>
+             </div>
+             <div className="flex items-start gap-2 col-span-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-peri mt-1.5 flex-shrink-0" />
+                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Hospitals: <span className="text-charcoal/80">{home.insightBullets.hospitals}</span></p>
+             </div>
+             <div className="flex items-start gap-2 col-span-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-peri mt-1.5 flex-shrink-0" />
+                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Transit: <span className="text-charcoal/80">{home.insightBullets.transit}</span></p>
+             </div>
+             <div className="flex items-start gap-2 col-span-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-sage mt-1.5 flex-shrink-0" />
+                <p className="text-[11px] font-bold text-charcoal/60 leading-tight">Green Space: <span className="text-charcoal/80">{home.insightBullets.greenSpace}</span></p>
              </div>
           </div>
 
@@ -183,12 +198,12 @@ export const HomeCard: React.FC<HomeCardProps> = ({
               <LinkIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
               <span className="text-[9px] font-black uppercase text-peri/60">View Full Listing</span>
             </a>
-            <button 
+            <button
               onClick={onDeepAnalysis}
               className="flex-1 h-16 bg-white border border-peri/20 rounded-2xl flex flex-col items-center justify-center gap-1 group hover:bg-peri/5 transition-all active:scale-95"
             >
               <MapIcon size={20} className="text-peri group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-peri/60">Deep Analysis</span>
+              <span className="text-[9px] font-black uppercase text-peri/60">Summary</span>
             </button>
           </div>
         </div>

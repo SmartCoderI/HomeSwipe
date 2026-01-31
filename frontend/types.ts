@@ -16,9 +16,13 @@ export interface Home {
   insightBullets: {
     style: string;
     vibe: string;
-    climateRisk: string;
-    safety: string;
+    risk: string; // Combines flood, fire, superfund, earthquake data
+    safety: string; // Crime data
     financials: string;
+    schools: string;
+    hospitals: string;
+    transit: string;
+    greenSpace: string;
   };
   // Specific matches to user's natural language prompt
   matchInsights: string[];

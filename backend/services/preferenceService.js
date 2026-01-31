@@ -201,9 +201,18 @@ Return ONLY the JSON object, nothing else. Include an "originalQuery" field with
             preferences.originalQuery = `${existingPreferences.originalQuery}. Additionally: ${query}`;
           }
 
-          console.log(`[PreferenceService] Preferences extracted successfully using ${model} (${version})`);
-          console.log(`[PreferenceService] Extracted preferences:`, JSON.stringify(preferences, null, 2));
-          
+          console.log(`[PreferenceService] ===== PREFERENCE EXTRACTION COMPLETE =====`);
+          console.log(`[PreferenceService] Model used: ${model} (${version})`);
+          console.log(`[PreferenceService] Original query: "${query}"`);
+          console.log(`[PreferenceService] Had existing preferences?`, !!existingPreferences);
+          if (existingPreferences) {
+            console.log(`[PreferenceService] Existing preferences:`, JSON.stringify(existingPreferences, null, 2));
+          }
+          console.log(`[PreferenceService] FINAL MERGED preferences:`, JSON.stringify(preferences, null, 2));
+          console.log(`[PreferenceService] Key count:`, Object.keys(preferences).length);
+          console.log(`[PreferenceService] Keys:`, Object.keys(preferences));
+          console.log(`[PreferenceService] ===== END PREFERENCE EXTRACTION =====`);
+
           return preferences;
         } catch (versionErr) {
           console.warn(`[PreferenceService] Model ${model} with ${version} error:`, versionErr.message);

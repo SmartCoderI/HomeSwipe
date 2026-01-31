@@ -1,16 +1,41 @@
-// CA OpenJustice Crime Data
-// Note: CA OpenJustice API may require different endpoints or authentication
-const CA_OPENJUSTICE_CRIME = "https://openjustice.doj.ca.gov/sites/default/files/data/crime-data-portal-api.json";
+// RapidAPI Crime Data by Zipcode
+const CRIME_API_BASE = "https://crime-data-by-zipcode-api.p.rapidapi.com/crime_data";
 
 const crimeCache = new Map();
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days (crime data updates monthly)
 
 /**
- * Get crime statistics for a city/county
- * Note: CA OpenJustice API structure may vary, this is a basic implementation
+ * Extract zip code from address string
  */
-export async function getCrimeData(city, county) {
-  const cacheKey = `${city || ""}_${county || ""}`.toLowerCase();
+function extractZipFromAddress(address) {
+  // Match 5-digit zip code
+  const zipMatch = address.match(/\b(\d{5})\b/);
+  return zipMatch ? zipMatch[1] : null;
+}
+
+/**
+ * Get crime statistics for a location by zip code
+ * @param {string} city - City name (used for result formatting)
+ * @param {string} county - County name (used for result formatting)
+ * @param {string} zipCode - 5-digit zip code (optional, extracted from address if not provided)
+ * @param {string} address - Full address (used to extract zip if zipCode not provided)
+ */
+export async function getCrimeData(city, county, zipCode = null, address = null) {
+  // Extract zip code from address if not provided
+  const zip = zipCode || (address ? extractZipFromAddress(address) : null);
+
+  if (!zip) {
+    console.log("[Crime] No zip code provided or extractable from address");
+    return {
+      found: false,
+      city: city || null,
+      county: county || null,
+      error: "No zip code available",
+      message: "Crime data unavailable - zip code required",
+    };
+  }
+
+  const cacheKey = zip;
   const cached = crimeCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     const { timestamp, ...result } = cached;
@@ -18,74 +43,41 @@ export async function getCrimeData(city, county) {
   }
 
   try {
-    console.log("[Crime] Fetching crime data for:", city || county || "location");
-    const res = await fetch(CA_OPENJUSTICE_CRIME, {
+    console.log("[Crime] Fetching crime data for zip:", zip);
+
+    const rapidApiKey = process.env.RAPIDAPI_KEY;
+    if (!rapidApiKey) {
+      throw new Error("RAPIDAPI_KEY not configured in environment");
+    }
+
+    const res = await fetch(`${CRIME_API_BASE}?zip=${zip}`, {
+      method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'HomeSwipe/1.0',
+        'x-rapidapi-host': 'crime-data-by-zipcode-api.p.rapidapi.com',
+        'x-rapidapi-key': rapidApiKey,
       },
     });
 
     if (!res.ok) {
-      throw new Error(`Crime API error: ${res.status} ${res.statusText}`);
+      const errorText = await res.text().catch(() => 'Unable to read error response');
+      throw new Error(`Crime API error: ${res.status} ${res.statusText} - ${errorText.substring(0, 200)}`);
     }
 
     const data = await res.json();
-    
-    // CA OpenJustice API structure may vary
-    // Try to extract relevant crime statistics for the city/county
-    let crimeStats = null;
-    
-    if (Array.isArray(data)) {
-      // If data is an array, try to find matching city/county
-      const match = data.find(item => {
-        const itemCity = (item.city || item.CITY || "").toLowerCase();
-        const itemCounty = (item.county || item.COUNTY || "").toLowerCase();
-        return (city && itemCity.includes(city.toLowerCase())) ||
-               (county && itemCounty.includes(county.toLowerCase()));
-      });
-      crimeStats = match;
-    } else if (data.data) {
-      // If data has a nested data property
-      const match = Array.isArray(data.data) 
-        ? data.data.find(item => {
-            const itemCity = (item.city || item.CITY || "").toLowerCase();
-            const itemCounty = (item.county || item.COUNTY || "").toLowerCase();
-            return (city && itemCity.includes(city.toLowerCase())) ||
-                   (county && itemCounty.includes(county.toLowerCase()));
-          })
-        : null;
-      crimeStats = match;
-    }
+    console.log("[Crime] API response received for zip:", zip);
 
-    // If we found crime stats, extract useful information
-    if (crimeStats) {
-      const result = {
-        found: true,
-        city: city || null,
-        county: county || null,
-        crimeRate: crimeStats.crime_rate || crimeStats.CRIME_RATE || null,
-        violentCrime: crimeStats.violent_crime || crimeStats.VIOLENT_CRIME || null,
-        propertyCrime: crimeStats.property_crime || crimeStats.PROPERTY_CRIME || null,
-        year: crimeStats.year || crimeStats.YEAR || null,
-        message: city || county 
-          ? `Crime statistics available for ${city || county}` 
-          : "Crime statistics available",
-        rawData: crimeStats,
-      };
-      crimeCache.set(cacheKey, { ...result, timestamp: Date.now() });
-      return result;
-    }
-
-    // If no specific match found but API call succeeded
+    // Extract crime statistics from RapidAPI response
     const result = {
       found: true,
-      city: city || null,
+      city: data.city || city || null,
       county: county || null,
-      message: city || county 
-        ? `Crime data available for ${city || county} (general California crime statistics)` 
-        : "Crime data available (general California statistics)",
-      note: "Specific city/county crime statistics not found in dataset",
+      zipCode: zip,
+      crimeRate: data.Overall || data.crime_index || null,
+      violentCrime: data.Violent || data.violent_crime || null,
+      propertyCrime: data.Property || data.property_crime || null,
+      year: data.year || new Date().getFullYear(),
+      message: `Crime statistics available for zip code ${zip}`,
+      rawData: data,
     };
 
     crimeCache.set(cacheKey, { ...result, timestamp: Date.now() });
@@ -96,8 +88,9 @@ export async function getCrimeData(city, county) {
       found: false,
       city: city || null,
       county: county || null,
+      zipCode: zip,
       error: String(err?.message || err),
-      message: "Crime data unavailable - API may require different endpoint or authentication",
+      message: "Crime data unavailable",
     };
   }
 }

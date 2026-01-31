@@ -38,11 +38,15 @@ const HOME_SCHEMA = {
         properties: {
           style: { type: Type.STRING },
           vibe: { type: Type.STRING },
-          climateRisk: { type: Type.STRING },
+          risk: { type: Type.STRING },
           safety: { type: Type.STRING },
-          financials: { type: Type.STRING }
+          financials: { type: Type.STRING },
+          schools: { type: Type.STRING },
+          hospitals: { type: Type.STRING },
+          transit: { type: Type.STRING },
+          greenSpace: { type: Type.STRING }
         },
-        required: ["style", "vibe", "climateRisk", "safety", "financials"]
+        required: ["style", "vibe", "risk", "safety", "financials", "schools", "hospitals", "transit", "greenSpace"]
       },
       matchInsights: {
         type: Type.ARRAY,
@@ -325,18 +329,29 @@ export const fetchRecommendations = async (prefs: UserPreferences, existingPrefs
 
     const data = await response.json();
 
+    console.log('=== BACKEND RESPONSE DEBUG ===');
+    console.log('📦 Full backend response:', JSON.stringify(data, null, 2));
+    console.log('=== END BACKEND RESPONSE ===');
+
     if (data.success && data.listings) {
       console.log(`✅ Got ${data.listings.length} listings from backend`);
       console.log(`✅ Preferences extracted by backend:`, JSON.stringify(data.preferences, null, 2));
-      
+      console.log('🔢 Preferences key count:', data.preferences ? Object.keys(data.preferences).length : 0);
+      console.log('📝 Preferences keys:', data.preferences ? Object.keys(data.preferences) : []);
+
       // Rank listings based on preferences returned from backend
       const rankedListings = rankListingsByPreferences(data.listings, data.preferences);
+
+      console.log('🎯 Returning to App.tsx:');
+      console.log('   - listings count:', rankedListings.length);
+      console.log('   - preferences:', JSON.stringify(data.preferences, null, 2));
+
       return { listings: rankedListings, preferences: data.preferences };
     } else {
       console.warn('⚠️ No listings found, returning empty array');
-      return { 
-        listings: [], 
-        preferences: data.preferences || { originalQuery: prefs.query } 
+      return {
+        listings: [],
+        preferences: data.preferences || { originalQuery: prefs.query }
       };
     }
   } catch (error) {
@@ -358,11 +373,11 @@ const generateMockListings = async (prefs: UserPreferences): Promise<Home[]> => 
       model: "gemini-2.5-flash-lite",
       contents: `You are a precision real estate agent. Generate 5 realistic real estate listings matching these user preferences: "${prefs.query}".
       
-      CRITICAL: 
+      CRITICAL:
       1. Default to Sunnyvale, CA unless another city is mentioned.
       2. listingUrl MUST be a deep link to the exact address. Format: https://www.zillow.com/homes/[Address-City-State-Zip]_rb/
       3. imageUrl MUST be a high-quality residential photo from Unsplash (e.g., https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800).
-      4. insightBullets MUST include style, vibe, climate risk, safety, and financials (Tax/HOA).
+      4. insightBullets MUST include style, vibe, risk (flood/fire/superfund/earthquake), safety (crime), financials (Tax/HOA), schools, hospitals, transit, and greenSpace.
       5. matchInsights MUST explicitly mention distances or specific facts related to the user's prompt (e.g., "5 min to Sunnyvale Caltrain").`,
       config: {
         responseMimeType: "application/json",
