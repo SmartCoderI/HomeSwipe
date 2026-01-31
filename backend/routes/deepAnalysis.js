@@ -41,7 +41,7 @@ export async function getDeepAnalysis(address) {
       getFloodZones(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),
       getFireHazard(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),
       getEarthquakeRisk(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),
-      getCrimeData(city, county).catch(err => ({ error: err.message })),
+      getCrimeData(city, county, null, address).catch(err => ({ error: err.message })),
       getNearbySchools(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),
       getNearbyHospitals(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),
       getTransitAccessibility(geocode.lat, geocode.lng).catch(err => ({ error: err.message })),

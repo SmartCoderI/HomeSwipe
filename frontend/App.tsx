@@ -29,6 +29,24 @@ const App: React.FC = () => {
   // NEW: Track user preferences as structured JSON object
   const [userPreferences, setUserPreferences] = useState<UserSearchPreferences | null>(null);
 
+  // Debug: Log preference changes
+  useEffect(() => {
+    console.log('=== PREFERENCES STATE CHANGED ===');
+    if (userPreferences) {
+      console.log('📋 User preferences updated:', JSON.stringify(userPreferences, null, 2));
+      console.log('🔢 Key count:', Object.keys(userPreferences).length);
+      console.log('📝 Keys:', Object.keys(userPreferences));
+
+      // Log what will be displayed (excluding originalQuery)
+      const displayKeys = Object.keys(userPreferences).filter(k => k !== 'originalQuery');
+      console.log('🎨 Keys to display in preferences box:', displayKeys);
+      console.log('📊 Display condition met?', Object.keys(userPreferences).length > 1);
+    } else {
+      console.log('📋 User preferences is NULL/UNDEFINED');
+    }
+    console.log('=== END PREFERENCES STATE ===');
+  }, [userPreferences]);
+
   // Auto-load mock data on startup if USE_MOCK_DATA is enabled (for testing)
   useEffect(() => {
     if (USE_MOCK_DATA && appState === AppState.LANDING) {
@@ -53,9 +71,19 @@ const App: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       setHomes(mockHomes);
     } else {
+      console.log('=== INITIAL SEARCH DEBUG ===');
+      console.log('🔍 Initial query:', query);
+
       const { listings, preferences } = await fetchRecommendations({ query, priorities: [] });
+
+      console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
+      console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
+
       setHomes(listings);
       setUserPreferences(preferences); // Store preferences for later updates
+
+      console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
+      console.log('=== END INITIAL SEARCH DEBUG ===');
     }
 
     setCurrentIndex(0);
@@ -73,20 +101,60 @@ const App: React.FC = () => {
     if (USE_MOCK_DATA) {
       // Simulate API delay for realistic feel
       await new Promise(resolve => setTimeout(resolve, 500));
+
+      // In mock mode, manually update preferences to simulate merging
+      if (userPreferences) {
+        // Create a simple merged preference by adding the refine query as a new field
+        const mockMergedPrefs = {
+          ...userPreferences,
+          originalQuery: combinedQuery,
+          // Add a generic field for the refinement
+          [refineQuery.toLowerCase().replace(/\s+/g, '_')]: true
+        };
+        console.log('🧪 MOCK MODE: Setting merged preferences:', mockMergedPrefs);
+        setUserPreferences(mockMergedPrefs);
+      }
+
       setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
     } else {
       // Pass existing preferences to merge instead of re-extracting everything
+      console.log('=== REFINE SEARCH DEBUG ===');
+      console.log('🔄 Refine query:', refineQuery);
+      console.log('📋 Current preferences BEFORE refine:', JSON.stringify(userPreferences, null, 2));
+      console.log('🔢 Current preferences key count:', userPreferences ? Object.keys(userPreferences).length : 0);
+
       const { listings, preferences } = await fetchRecommendations(
         { query: refineQuery, priorities: [] },
         userPreferences || undefined
       );
+
+      console.log('✅ Received merged preferences from API:', JSON.stringify(preferences, null, 2));
+      console.log('🔢 Merged preferences key count:', preferences ? Object.keys(preferences).length : 0);
+      console.log('📝 Preference keys:', preferences ? Object.keys(preferences) : []);
+
       setUserPreferences(preferences); // Update with merged preferences
+
+      // Double-check what was set
+      console.log('✔️ setUserPreferences called with:', JSON.stringify(preferences, null, 2));
+      console.log('=== END REFINE DEBUG ===');
+
       setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
     }
 
     setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
     setLoading(false);
+  };
+
+  const removePreference = (key: string) => {
+    if (!userPreferences) return;
+
+    const updatedPreferences = { ...userPreferences };
+    delete updatedPreferences[key];
+    setUserPreferences(updatedPreferences);
+
+    // Optionally re-filter homes based on updated preferences
+    // You could implement client-side filtering here if needed
   };
 
   const openMapAnalysis = async (home: Home) => {
@@ -228,21 +296,30 @@ const App: React.FC = () => {
         </header>
 
         {/* User Preferences Display */}
-        {userPreferences && Object.keys(userPreferences).length > 1 && (
-          <div className="mb-4 glass p-4 rounded-2xl border border-peri/10">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-peri animate-pulse" />
-              <h3 className="text-[9px] font-black uppercase text-peri/60 tracking-[0.2em]">
-                Your Preferences
-              </h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(userPreferences)
-                .filter(([key]) => key !== 'originalQuery')
-                .map(([key, value]) => (
+        {(() => {
+          const shouldShow = userPreferences && Object.keys(userPreferences).length > 1;
+          const entries = userPreferences ? Object.entries(userPreferences).filter(([key]) => key !== 'originalQuery') : [];
+
+          console.log('🎨 RENDERING Preferences Box:');
+          console.log('   - userPreferences exists?', !!userPreferences);
+          console.log('   - Total keys:', userPreferences ? Object.keys(userPreferences).length : 0);
+          console.log('   - Should show box?', shouldShow);
+          console.log('   - Entries to display:', entries.length);
+          console.log('   - Entries:', entries.map(([k, v]) => `${k}=${v}`).join(', '));
+
+          return shouldShow && (
+            <div className="mb-4 glass p-4 rounded-2xl border border-peri/10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-peri animate-pulse" />
+                <h3 className="text-[9px] font-black uppercase text-peri/60 tracking-[0.2em]">
+                  Your Preferences ({entries.length} items)
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {entries.map(([key, value]) => (
                   <div
                     key={key}
-                    className="px-3 py-1.5 bg-white/60 rounded-full border border-peri/20"
+                    className="group relative px-3 py-1.5 pr-7 bg-white/60 rounded-full border border-peri/20 hover:border-peri/40 transition-all"
                   >
                     <span className="text-[10px] font-bold text-charcoal/60">
                       {key.replace(/_/g, ' ')}:{' '}
@@ -250,11 +327,19 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-black text-peri">
                       {typeof value === 'boolean' ? (value ? '✓' : '✗') : String(value)}
                     </span>
+                    <button
+                      onClick={() => removePreference(key)}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-coral rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:scale-110 active:scale-95"
+                      title={`Remove ${key}`}
+                    >
+                      <X size={10} className="text-white" />
+                    </button>
                   </div>
                 ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Refinement Area */}
         <div className="mb-6">

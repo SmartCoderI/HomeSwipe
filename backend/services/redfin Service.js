@@ -79,9 +79,13 @@ const transformRedfinListing = (listing, index, location) => {
     insightBullets: {
       style: propertyType,
       vibe: location,
-      climateRisk: 'Low to Moderate',
-      safety: 'Research neighborhood',
+      risk: 'Risk data will be enriched',
+      safety: 'Safety data will be enriched',
       financials: price ? `~$${Math.round(price * 0.004).toLocaleString()}/month` : 'Contact for price',
+      schools: 'School data will be enriched',
+      hospitals: 'Hospital data will be enriched',
+      transit: 'Transit data will be enriched',
+      greenSpace: 'Green space data will be enriched',
     },
     matchInsights: [
       `${beds} bedroom${beds !== 1 ? 's' : ''}, ${baths} bathroom${baths !== 1 ? 's' : ''}`,
@@ -145,7 +149,7 @@ export const searchRedfinListings = async (params) => {
     if (bathrooms) queryParams.min_baths = bathrooms;
 
     // Build URL
-    const url = new URL(`https://${RAPIDAPI_HOST}/1.1/redfin/search/location/for-sale`);
+    const url = new URL(`https://${RAPIDAPI_HOST}/1.0/redfin/search/location/for-sale`);
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
     });
@@ -244,7 +248,17 @@ export const searchRedfinListings = async (params) => {
             imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200',
             listingUrl: `https://www.redfin.com/search?location=${encodeURIComponent(location)}`,
             specs: { beds: 0, baths: 0, sqft: 0 },
-            insightBullets: { style: 'Unknown', vibe: location, climateRisk: 'Unknown', safety: 'Unknown', financials: 'Unknown' },
+            insightBullets: {
+              style: 'Unknown',
+              vibe: location,
+              risk: 'Unknown',
+              safety: 'Unknown',
+              financials: 'Unknown',
+              schools: 'Unknown',
+              hospitals: 'Unknown',
+              transit: 'Unknown',
+              greenSpace: 'Unknown'
+            },
             matchInsights: ['Listing data unavailable'],
             analysis: { nature: 'Unknown', commute: 'Unknown', safety: 'Unknown', schools: 'Unknown' },
           };
