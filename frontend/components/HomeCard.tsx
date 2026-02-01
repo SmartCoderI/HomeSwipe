@@ -26,6 +26,7 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   isBestMatch = false
 }) => {
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleAction = (direction: 'left' | 'right') => {
     setIsAnimating(direction);
@@ -45,18 +46,103 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       }`}
     >
       <div className="h-full overflow-y-auto no-scrollbar bg-white/40">
-        {/* 1. Hero Image */}
-        <div className="relative h-64 flex-shrink-0">
-          <img
-            src={home.imageUrl}
-            alt={home.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
+        {/* 1. Hero Image Carousel */}
+        <div className="relative h-64 flex-shrink-0 overflow-hidden">
+          {/* Loading indicator */}
+          {!home.imageUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-greige/20">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-peri"></div>
+                <p className="text-xs font-bold text-charcoal/40">Loading images...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Image carousel container */}
+          {home.imageUrl && (
+            <>
+              <div
+                className="flex transition-transform duration-300 h-full"
+                style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              >
+                {home.images && home.images.length > 0 ? (
+                  home.images.map((imgUrl, idx) => (
+                    <img
+                      key={idx}
+                      src={imgUrl}
+                      alt={`${home.address} - Image ${idx + 1}`}
+                      className="w-full h-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        // Fallback to placeholder if image fails to load
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200';
+                      }}
+                    />
+                  ))
+                ) : (
+                  <img
+                    src={home.imageUrl}
+                    alt={home.address}
+                    className="w-full h-full object-cover flex-shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200';
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Navigation Arrows */}
+              {home.images && home.images.length > 1 && (
+                <>
+                  {currentImageIndex > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev - 1);
+                      }}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all active:scale-95"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft size={20} className="text-charcoal" />
+                    </button>
+                  )}
+                  {currentImageIndex < home.images.length - 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev + 1);
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all active:scale-95"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight size={20} className="text-charcoal" />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Image Indicators */}
+              {home.images && home.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5">
+                  {home.images.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-full transition-all ${
+                        idx === currentImageIndex
+                          ? 'w-6 h-1.5 bg-white'
+                          : 'w-1.5 h-1.5 bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent pointer-events-none" />
 
           {/* Best Match Badge */}
           {isBestMatch && (
-            <div className="absolute top-4 right-4 px-4 py-2 bg-sage rounded-full shadow-lg border-2 border-white">
+            <div className="absolute top-4 right-4 px-4 py-2 bg-sage rounded-full shadow-lg border-2 border-white z-10">
               <div className="flex items-center gap-2">
                 <Star size={14} className="text-white fill-white" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-white">

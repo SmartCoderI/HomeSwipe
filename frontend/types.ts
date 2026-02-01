@@ -5,7 +5,9 @@ export interface Home {
   price: string;
   address: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string | null; // Primary image (first from images array) - null until loaded
+  images?: string[]; // All property images from Redfin API
+  redfinUrl?: string; // Redfin detail page URL for fetching images on-demand
   listingUrl: string;
   specs: {
     beds: number;
@@ -45,4 +47,11 @@ export enum AppState {
   COMPARING = 'COMPARING',
   LIKED_HOMES = 'LIKED_HOMES',
   DEEP_ANALYSIS = 'DEEP_ANALYSIS',
+}
+
+export interface User {
+  googleId: string;
+  email: string;
+  name: string;
+  picture: string;
 }

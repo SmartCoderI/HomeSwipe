@@ -107,13 +107,11 @@ Return ONLY the JSON object, nothing else. Include an "originalQuery" field with
     console.log(`[PreferenceService] Prompt length: ${prompt.length} characters`);
 
     // Try different Gemini models and API versions
+    // Use models that are actually available as of January 2026
     const modelVariations = [
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-latest",
-      "gemini-2.0-flash-exp",
-      "gemini-1.5-pro"
+      "gemini-2.5-flash-lite",      // Lightweight model with better quota
     ];
-    const apiVersions = ["v1beta", "v1"];
+    const apiVersions = ["v1"];
     let lastError = null;
     
     for (const model of modelVariations) {
@@ -138,7 +136,6 @@ Return ONLY the JSON object, nothing else. Include an "originalQuery" field with
                 topK: 40,
                 topP: 0.95,
                 maxOutputTokens: 2048,
-                responseMimeType: "application/json", // Request JSON response
               }
             })
           });
