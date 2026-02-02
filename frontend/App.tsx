@@ -13,8 +13,8 @@ import { mockHomes } from './mockData';
 import { AuthProvider } from './contexts/AuthContext';
 
 // Set to true to use mock data for faster frontend testing
-//const USE_MOCK_DATA = true;
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = true;
+//const USE_MOCK_DATA = false;
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
@@ -233,41 +233,34 @@ const App: React.FC = () => {
     });
   };
 
-  if (appState === AppState.LANDING) {
-    return (
-      <AuthProvider>
-        <LandingPage onSubmit={startDiscovery} isLoading={loading} />
-      </AuthProvider>
-    );
-  }
+  // Render content based on app state
+  const renderContent = () => {
+    if (appState === AppState.LANDING) {
+      return <LandingPage onSubmit={startDiscovery} isLoading={loading} />;
+    }
 
-  if (appState === AppState.COMPARING) {
-    return (
-      <AuthProvider>
+    if (appState === AppState.COMPARING) {
+      return (
         <ComparisonView
           homes={compareList}
           onBack={() => setAppState(AppState.BROWSING)}
           onRemove={(id) => setCompareList(compareList.filter(h => h.id !== id))}
         />
-      </AuthProvider>
-    );
-  }
+      );
+    }
 
-  if (appState === AppState.LIKED_HOMES) {
-    return (
-      <AuthProvider>
+    if (appState === AppState.LIKED_HOMES) {
+      return (
         <LikedHomesView
           homes={likedHomes}
           onBack={() => setAppState(AppState.BROWSING)}
           onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))}
         />
-      </AuthProvider>
-    );
-  }
+      );
+    }
 
-  if (appState === AppState.SAVED_HOMES) {
-    return (
-      <AuthProvider>
+    if (appState === AppState.SAVED_HOMES) {
+      return (
         <Layout
           onNavigateToSavedHomes={() => setAppState(AppState.SAVED_HOMES)}
           showSavedHomesLink={false}
@@ -280,25 +273,22 @@ const App: React.FC = () => {
             }}
           />
         </Layout>
-      </AuthProvider>
-    );
-  }
+      );
+    }
 
-  if (appState === AppState.DEEP_ANALYSIS && deepAnalysisHome) {
-    return (
-      <AuthProvider>
+    if (appState === AppState.DEEP_ANALYSIS && deepAnalysisHome) {
+      return (
         <DeepAnalysisView
           home={deepAnalysisHome}
           onBack={() => setAppState(AppState.BROWSING)}
         />
-      </AuthProvider>
-    );
-  }
+      );
+    }
 
-  const currentHome = homes[currentIndex];
+    // Default: BROWSING state
+    const currentHome = homes[currentIndex];
 
-  return (
-    <AuthProvider>
+    return (
       <Layout
         onNavigateToSavedHomes={() => setAppState(AppState.SAVED_HOMES)}
         showSavedHomesLink={true}
@@ -426,16 +416,12 @@ const App: React.FC = () => {
 
         {/* Bottom Nav */}
         <footer className="mt-8 mb-4 flex flex-col gap-3">
-          <button 
-            onClick={() => setAppState(AppState.LIKED_HOMES)}
-            className={`w-full h-16 rounded-[2rem] flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl active:scale-95 ${
-              likedHomes.length > 0 
-              ? 'bg-sage text-white shadow-sage/20' 
-              : 'bg-white/40 text-charcoal/20'
-            }`}
+          <button
+            onClick={() => setAppState(AppState.SAVED_HOMES)}
+            className="w-full h-16 rounded-[2rem] flex items-center justify-center gap-4 font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl active:scale-95 bg-red-500 text-white shadow-red-500/20"
           >
             <Heart size={18} />
-            Saved Homes {likedHomes.length > 0 && `(${likedHomes.length})`}
+            Saved Homes
           </button>
         </footer>
 
@@ -501,6 +487,12 @@ const App: React.FC = () => {
         )}
       </div>
     </Layout>
+    );
+  };
+
+  return (
+    <AuthProvider>
+      {renderContent()}
     </AuthProvider>
   );
 };

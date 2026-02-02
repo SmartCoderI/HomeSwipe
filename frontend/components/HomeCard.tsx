@@ -27,6 +27,11 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   isBestMatch = false
 }) => {
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Combine main image with additional images
+  const allImages = [home.imageUrl, ...(home.additionalImages || [])];
+  const hasMultipleImages = allImages.length > 1;
 
   const handleAction = (direction: 'left' | 'right') => {
     setIsAnimating(direction);
@@ -35,6 +40,16 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       else onSwipeRight();
       setIsAnimating(null);
     }, 300);
+  };
+
+  const handlePreviousImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
 
   return (
@@ -46,10 +61,10 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       }`}
     >
       <div className="h-full overflow-y-auto no-scrollbar bg-white/40">
-        {/* 1. Hero Image */}
+        {/* 1. Hero Image with Carousel */}
         <div className="relative h-64 flex-shrink-0">
           <img
-            src={home.imageUrl}
+            src={allImages[currentImageIndex]}
             alt={home.title}
             className="w-full h-full object-cover"
           />
@@ -62,13 +77,49 @@ export const HomeCard: React.FC<HomeCardProps> = ({
 
           {/* Best Match Badge */}
           {isBestMatch && (
-            <div className="absolute top-4 right-4 px-4 py-2 bg-sage rounded-full shadow-lg border-2 border-white">
-              <div className="flex items-center gap-2">
-                <Star size={14} className="text-white fill-white" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-white">
-                  Best Match
-                </span>
-              </div>
+            <div className="absolute top-4 right-4 px-3 py-1.5 bg-peri rounded-full shadow-lg flex items-center gap-1.5">
+              <Star size={12} className="text-white fill-white" />
+              <span className="text-[10px] font-bold uppercase tracking-wide text-white">
+                Best Match
+              </span>
+            </div>
+          )}
+
+          {/* Image Navigation Arrows */}
+          {hasMultipleImages && (
+            <>
+              <button
+                onClick={handlePreviousImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-90 z-10"
+              >
+                <ChevronLeft size={18} className="text-charcoal" />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-90 z-10"
+              >
+                <ChevronRight size={18} className="text-charcoal" />
+              </button>
+            </>
+          )}
+
+          {/* Image Indicator Dots */}
+          {hasMultipleImages && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {allImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(index);
+                  }}
+                  className={`transition-all ${
+                    index === currentImageIndex
+                      ? 'w-6 h-1.5 bg-white'
+                      : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/75'
+                  } rounded-full`}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -169,19 +220,19 @@ export const HomeCard: React.FC<HomeCardProps> = ({
             </button>
             
             {/* Primary Swipe Controls */}
-            <button 
+            <button
               onClick={() => handleAction('left')}
-              className="flex-1 h-16 bg-white border border-coral/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
+              className="flex-1 h-16 bg-white border border-charcoal/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
             >
-              <ThumbsDown size={20} className="text-coral group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-coral/60">Dislike</span>
+              <ThumbsDown size={20} className="text-charcoal group-active:scale-90 transition-transform" />
+              <span className="text-[9px] font-black uppercase text-charcoal/60">Dislike</span>
             </button>
-            <button 
+            <button
               onClick={() => handleAction('right')}
-              className="flex-1 h-16 bg-white border border-sage/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
+              className="flex-1 h-16 bg-white border border-red-500/20 rounded-2xl flex flex-col items-center justify-center gap-1 group"
             >
-              <ThumbsUp size={20} className="text-sage group-active:scale-90 transition-transform" />
-              <span className="text-[9px] font-black uppercase text-sage/60">Like</span>
+              <ThumbsUp size={20} className="text-red-500 group-active:scale-90 transition-transform" />
+              <span className="text-[9px] font-black uppercase text-red-500/60">Like</span>
             </button>
             
             <button 

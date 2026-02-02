@@ -6,6 +6,7 @@ export interface Home {
   address: string;
   description: string;
   imageUrl: string;
+  additionalImages?: string[];
   listingUrl: string;
   specs: {
     beds: number;

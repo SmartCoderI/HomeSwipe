@@ -69,8 +69,8 @@ export const SavedHomesButton: React.FC<SavedHomesButtonProps> = ({ home, size =
     }
   };
 
-  const iconSize = size === 'large' ? '32px' : '24px';
-  const buttonSize = size === 'large' ? '48px' : '36px';
+  const iconSize = size === 'large' ? '18px' : '14px';
+  const buttonSize = size === 'large' ? '32px' : '24px';
 
   return (
     <button
@@ -93,14 +93,15 @@ export const SavedHomesButton: React.FC<SavedHomesButtonProps> = ({ home, size =
 
 const styles: { [key: string]: React.CSSProperties } = {
   button: {
-    background: 'rgba(255, 255, 255, 0.9)',
-    border: '2px solid rgba(0, 0, 0, 0.1)',
+    background: 'rgba(255, 255, 255, 0.75)',
+    border: '1px solid rgba(0, 0, 0, 0.08)',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(8px)',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
   },
 };

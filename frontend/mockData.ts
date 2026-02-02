@@ -8,7 +8,7 @@ export const mockHomes: Home[] = [
     price: "$950,000",
     address: "1616 Waverly Ave, San Jose, CA 95122",
     description: "Affordable East San Jose single-family home offering urban convenience, low environmental risk, and fast access to highways and downtown.",
-    imageUrl: "https://www.redfin.com/CA/San-Jose/1616-Waverly-Ave-95122/home/1703532",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/45/bigphoto/082/CV25277082_0.jpg",
     listingUrl: "https://www.redfin.com/CA/San-Jose/1616-Waverly-Ave-95122/home/1703532",
     specs: {
       beds: 3,
@@ -44,7 +44,11 @@ export const mockHomes: Home[] = [
     price: "$998,000",
     address: "366 Cureton Pl, San Jose, CA 95127",
     description: "Single-Family Home on Quiet Cul-de-Sac in East San Jose Foothills",
-    imageUrl: "https://www.redfin.com/CA/San-Jose/366-Cureton-Pl-95127/home/921650",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/643/genMid.ML82032643_1_0.jpg",
+    additionalImages: [
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/643/ML82032643_6_0.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/643/ML82032643_0.jpg"
+],
     listingUrl: "https://www.redfin.com/CA/San-Jose/366-Cureton-Pl-95127/home/921650",
     specs: {
       beds: 3,
@@ -80,7 +84,12 @@ export const mockHomes: Home[] = [
     price: "$1,248,000",
     address: "3279 Cuesta Dr, San Jose, CA 95148",
     description: "Well-Maintained Evergreen Home Near Foothills with Private Yard",
-    imageUrl: "https://www.redfin.com/CA/San-Jose/3279-Cuesta-Dr-95148/home/630176",
+    imageUrl: "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/item_53.jpg",
+    additionalImages: [
+  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/genLdpUgcMediaBrowserUrl/item_42.jpg",
+  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/genLdpUgcMediaBrowserUrl/item_8.jpg",
+  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/item_33.jpg"
+],
     listingUrl: "https://www.redfin.com/CA/San-Jose/3279-Cuesta-Dr-95148/home/630176",
     specs: {
       beds: 3,
@@ -117,7 +126,12 @@ export const mockHomes: Home[] = [
     price: "$2,598,000",
     address: "821 Raintree Dr, San Jose, CA 95129",
     description: "Quiet West Valley living with strong schools, low environmental risk, and convenient Silicon Valley access.",
-    imageUrl: "https://www.redfin.com/CA/San-Jose/821-Raintree-Dr-95129/home/801833",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/9/bigphoto/987/426095987_2.jpg",
+    additionalImages: [
+  "https://ssl.cdn-redfin.com/photo/9/bigphoto/987/426095987_3_1.jpg",
+  "https://ssl.cdn-redfin.com/photo/9/bigphoto/987/426095987_6_1.jpg",
+  "https://ssl.cdn-redfin.com/photo/9/bigphoto/987/426095987_18_1.jpg"
+],
     listingUrl: "https://www.redfin.com/CA/San-Jose/821-Raintree-Dr-95129/home/801833",
     specs: {
       beds: 3,
@@ -153,7 +167,12 @@ export const mockHomes: Home[] = [
     price: "$2,499,888",
     address: "5733 Harder St, San Jose, CA 95129",
     description: "Compact West San Jose home offering top-tier Cupertino-area schools, low environmental risk, and strong long-term location value.",
-    imageUrl: "https://www.redfin.com/CA/San-Jose/5733-Harder-St-95129/home/1709719",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/114/ML82030114_3.jpg",
+    additionalImages: [
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/114/ML82030114_9_3.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/114/genMid.ML82030114_4_3.jpg"
+
+],
     listingUrl: "https://www.redfin.com/CA/San-Jose/5733-Harder-St-95129/home/1709719",
     specs: {
       beds: 3,
