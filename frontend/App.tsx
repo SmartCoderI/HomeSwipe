@@ -4,11 +4,13 @@ import { Home, AppState } from './types';
 import { LandingPage } from './views/LandingPage';
 import { LikedHomesView } from './views/LikedHomesView';
 import { DeepAnalysisView } from './views/DeepAnalysisView';
+import { SavedHomesView } from './views/SavedHomesView';
 import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
 import { mockHomes } from './mockData';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Set to true to use mock data for faster frontend testing
 //const USE_MOCK_DATA = true;
@@ -232,42 +234,75 @@ const App: React.FC = () => {
   };
 
   if (appState === AppState.LANDING) {
-    return <LandingPage onSubmit={startDiscovery} isLoading={loading} />;
+    return (
+      <AuthProvider>
+        <LandingPage onSubmit={startDiscovery} isLoading={loading} />
+      </AuthProvider>
+    );
   }
 
   if (appState === AppState.COMPARING) {
     return (
-      <ComparisonView 
-        homes={compareList} 
-        onBack={() => setAppState(AppState.BROWSING)} 
-        onRemove={(id) => setCompareList(compareList.filter(h => h.id !== id))} 
-      />
+      <AuthProvider>
+        <ComparisonView
+          homes={compareList}
+          onBack={() => setAppState(AppState.BROWSING)}
+          onRemove={(id) => setCompareList(compareList.filter(h => h.id !== id))}
+        />
+      </AuthProvider>
     );
   }
 
   if (appState === AppState.LIKED_HOMES) {
     return (
-      <LikedHomesView 
-        homes={likedHomes} 
-        onBack={() => setAppState(AppState.BROWSING)} 
-        onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))} 
-      />
+      <AuthProvider>
+        <LikedHomesView
+          homes={likedHomes}
+          onBack={() => setAppState(AppState.BROWSING)}
+          onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))}
+        />
+      </AuthProvider>
+    );
+  }
+
+  if (appState === AppState.SAVED_HOMES) {
+    return (
+      <AuthProvider>
+        <Layout
+          onNavigateToSavedHomes={() => setAppState(AppState.SAVED_HOMES)}
+          showSavedHomesLink={false}
+        >
+          <SavedHomesView
+            onBack={() => setAppState(AppState.BROWSING)}
+            onViewHome={(home) => {
+              setDeepAnalysisHome(home);
+              setAppState(AppState.DEEP_ANALYSIS);
+            }}
+          />
+        </Layout>
+      </AuthProvider>
     );
   }
 
   if (appState === AppState.DEEP_ANALYSIS && deepAnalysisHome) {
     return (
-      <DeepAnalysisView 
-        home={deepAnalysisHome} 
-        onBack={() => setAppState(AppState.BROWSING)} 
-      />
+      <AuthProvider>
+        <DeepAnalysisView
+          home={deepAnalysisHome}
+          onBack={() => setAppState(AppState.BROWSING)}
+        />
+      </AuthProvider>
     );
   }
 
   const currentHome = homes[currentIndex];
 
   return (
-    <Layout>
+    <AuthProvider>
+      <Layout
+        onNavigateToSavedHomes={() => setAppState(AppState.SAVED_HOMES)}
+        showSavedHomesLink={true}
+      >
       <div className="h-full flex flex-col">
         {/* Header with Back Button */}
         <header className="flex justify-between items-center mb-4">
@@ -466,6 +501,7 @@ const App: React.FC = () => {
         )}
       </div>
     </Layout>
+    </AuthProvider>
   );
 };
 

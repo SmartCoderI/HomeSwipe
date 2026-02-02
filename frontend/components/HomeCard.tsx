@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Home } from '../types';
+import { SavedHomesButton } from './SavedHomesButton';
 
 interface HomeCardProps {
   home: Home;
@@ -53,6 +54,11 @@ export const HomeCard: React.FC<HomeCardProps> = ({
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
+
+          {/* Save Button - Top Left */}
+          <div className="absolute top-4 left-4 z-10">
+            <SavedHomesButton home={home} />
+          </div>
 
           {/* Best Match Badge */}
           {isBestMatch && (
