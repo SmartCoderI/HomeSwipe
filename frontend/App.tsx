@@ -271,6 +271,10 @@ const App: React.FC = () => {
               setDeepAnalysisHome(home);
               setAppState(AppState.DEEP_ANALYSIS);
             }}
+            onCompare={(homes) => {
+              setCompareList(homes);
+              setAppState(AppState.COMPARING);
+            }}
           />
         </Layout>
       );

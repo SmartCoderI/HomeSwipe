@@ -8,12 +8,37 @@ import { SavedHomesButton } from '../components/SavedHomesButton';
 interface SavedHomesViewProps {
   onBack: () => void;
   onViewHome?: (home: Home) => void;
+  onCompare?: (homes: Home[]) => void;
 }
 
-export const SavedHomesView: React.FC<SavedHomesViewProps> = ({ onBack, onViewHome }) => {
+export const SavedHomesView: React.FC<SavedHomesViewProps> = ({ onBack, onViewHome, onCompare }) => {
   const { user, isAuthenticated } = useAuth();
   const [savedHomes, setSavedHomes] = useState<Home[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedHomes, setSelectedHomes] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (homeId: string) => {
+    setSelectedHomes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(homeId)) {
+        newSet.delete(homeId);
+      } else {
+        if (newSet.size >= 2) {
+          // Only allow selecting 2 homes
+          return prev;
+        }
+        newSet.add(homeId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleCompare = () => {
+    if (selectedHomes.size === 2 && onCompare) {
+      const homesToCompare = savedHomes.filter(home => selectedHomes.has(home.id));
+      onCompare(homesToCompare);
+    }
+  };
 
   useEffect(() => {
     const loadSavedHomes = async () => {
@@ -103,29 +128,60 @@ export const SavedHomesView: React.FC<SavedHomesViewProps> = ({ onBack, onViewHo
         <h2 className="text-2xl font-bold text-charcoal">
           ❤️ Saved Homes ({savedHomes.length})
         </h2>
-        <div className="w-16" /> {/* Spacer for centering */}
+        <button
+          onClick={handleCompare}
+          disabled={selectedHomes.size !== 2}
+          className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+            selectedHomes.size === 2
+              ? 'bg-peri text-white hover:bg-peri-dark'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          Compare ({selectedHomes.size}/2)
+        </button>
       </div>
 
       {/* Grid of Saved Homes */}
       <div className="grid grid-cols-1 gap-6">
-        {savedHomes.map((home) => (
-          <div
-            key={home.id}
-            className="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-            onClick={() => onViewHome && onViewHome(home)}
-          >
-            {/* Image */}
-            <div className="relative h-48">
-              <img
-                src={home.imageUrl}
-                alt={home.address}
-                className="w-full h-full object-cover"
-              />
-              {/* Save Button Overlay */}
-              <div className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
-                <SavedHomesButton home={home} size="small" />
+        {savedHomes.map((home) => {
+          const isSelected = selectedHomes.has(home.id);
+          return (
+            <div
+              key={home.id}
+              className={`relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all ${
+                isSelected ? 'ring-4 ring-peri' : ''
+              }`}
+            >
+              {/* Image */}
+              <div className="relative h-48">
+                <img
+                  src={home.imageUrl}
+                  alt={home.address}
+                  className="w-full h-full object-cover"
+                />
+                {/* Selection Checkbox */}
+                <div
+                  className="absolute top-3 left-3 z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelection(home.id);
+                  }}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all ${
+                    isSelected ? 'bg-peri' : 'bg-white/80 backdrop-blur-sm'
+                  }`}>
+                    {isSelected ? (
+                      <span className="text-white font-bold text-lg">✓</span>
+                    ) : (
+                      <span className="text-gray-400 text-lg">○</span>
+                    )}
+                  </div>
+                </div>
+                {/* Save Button Overlay */}
+                <div className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
+                  <SavedHomesButton home={home} size="small" />
+                </div>
               </div>
-            </div>
 
             {/* Content */}
             <div className="p-4">
@@ -155,7 +211,8 @@ export const SavedHomesView: React.FC<SavedHomesViewProps> = ({ onBack, onViewHo
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
