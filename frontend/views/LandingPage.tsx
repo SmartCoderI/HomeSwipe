@@ -24,6 +24,58 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSubmit, isLoading })
     if (query.trim()) onSubmit(query);
   };
 
+  // Loading overlay when searching
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex flex-col min-h-[90vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-8">
+            {/* Animated House Icon */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-3xl bg-peri/10 flex items-center justify-center animate-pulse">
+                <HomeSearchIcon size={48} className="text-peri" />
+              </div>
+              {/* Orbiting dots */}
+              <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-peri shadow-lg shadow-peri/50" />
+              </div>
+              <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-1s' }}>
+                <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-sage shadow-lg shadow-sage/50" />
+              </div>
+              <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-2s' }}>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-coral shadow-lg shadow-coral/50" />
+              </div>
+            </div>
+
+            {/* Loading text */}
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-black text-charcoal tracking-tight">Finding Your Perfect Matches</h2>
+              <p className="text-charcoal/40 text-xs font-bold uppercase tracking-widest animate-pulse">
+                Analyzing preferences...
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-48 h-1.5 bg-greige/30 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-peri to-sage rounded-full animate-loading-bar" />
+            </div>
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes loading-bar {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 0%; margin-left: 100%; }
+          }
+          .animate-loading-bar {
+            animation: loading-bar 1.5s ease-in-out infinite;
+          }
+        `}</style>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="flex flex-col min-h-[90vh] animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -124,6 +176,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSubmit, isLoading })
 };
 
 // Icons Mock
+const HomeSearchIcon = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+    <circle cx="11" cy="9" r="2"/>
+  </svg>
+);
 const Sparkles = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
 );

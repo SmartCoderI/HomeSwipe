@@ -36,8 +36,8 @@ const App: React.FC = () => {
 
   // Progressive image loading function
   const fetchImagesForProperty = async (index: number) => {
-    // Skip if already loaded or no property at index
-    if (loadedImageIndices.has(index) || !homes[index]?.redfinUrl) {
+    // Skip if already loaded, no property at index, or images already present from backend
+    if (loadedImageIndices.has(index) || !homes[index]?.redfinUrl || (homes[index]?.images?.length > 0)) {
       return;
     }
 
@@ -53,13 +53,13 @@ const App: React.FC = () => {
 
       const { images } = await response.json();
 
-      // Update home with images
+      // Update home with images (or empty array if none available)
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         updated[index] = {
           ...updated[index],
           images: images || [],
-          imageUrl: images?.[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200'
+          imageUrl: images?.[0] || null // null means no images available
         };
         return updated;
       });
@@ -68,12 +68,13 @@ const App: React.FC = () => {
       console.log(`✅ Loaded ${images?.length || 0} images for property ${index + 1}`);
     } catch (error) {
       console.error('Failed to fetch images:', error);
-      // Set fallback image on error
+      // Set empty images array on error - will show "no images available"
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         updated[index] = {
           ...updated[index],
-          imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200'
+          images: [],
+          imageUrl: null
         };
         return updated;
       });
