@@ -36,6 +36,14 @@ try {
 import { getFloodAnalysis } from './routes/floodAnalysis.js';
 import { getDeepAnalysis } from './routes/deepAnalysis.js';
 import { searchListings } from './routes/searchListings.js';
+import fetchPropertyImagesRouter from './routes/fetchPropertyImages.js';
+import frontendLogsRouter from './routes/frontendLogs.js';
+
+// Import logging utilities
+import logger, {
+  correlationIdMiddleware,
+  httpLoggingMiddleware,
+} from './utils/logger.js';
 
 // Log API key status on startup
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_GEOCODING_API_KEY;
@@ -58,6 +66,10 @@ if (GEMINI_API_KEY) {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Logging middleware (MUST be before routes)
+app.use(correlationIdMiddleware);
+app.use(httpLoggingMiddleware);
 
 app.use(cors());
 app.use(express.json());
@@ -86,6 +98,12 @@ app.get('/api/flood-analysis', async (req, res) => {
 
 // Search listings endpoint (your feature)
 app.post('/api/search-listings', searchListings);
+
+// Property images endpoint (progressive loading)
+app.use(fetchPropertyImagesRouter);
+
+// Frontend logs endpoint
+app.use(frontendLogsRouter);
 
 // Deep analysis endpoint (master feature - comprehensive analysis with Gemini summary)
 app.get('/api/deep-analysis', async (req, res) => {
