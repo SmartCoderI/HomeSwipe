@@ -3,6 +3,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Home, UserPreferences } from "../types";
 
 /**
+ * Toggle to use mock endpoint instead of real Redfin API
+ * When true, calls /api/mock-listings which returns pre-defined mock data
+ * Set to false to use real API calls via /api/search-listings
+ */
+const USE_MOCK_API = true;
+
+/**
  * User preferences extracted from query - flexible JSON object
  * This is the structured preference state that tracks user needs
  */
@@ -299,11 +306,31 @@ const promptUserForLocation = (): string | null => {
 };
 
 /**
- * Fetch real listings from backend API (which calls Redfin)
- * Backend handles: preference extraction, mapping to Redfin API params, and API call
+ * Fetch listings from backend API
+ * When USE_MOCK_API is true, calls /api/mock-listings (returns pre-defined mock data)
+ * When USE_MOCK_API is false, calls /api/search-listings (real Redfin API)
  */
 export const fetchRecommendations = async (prefs: UserPreferences, existingPrefs?: UserSearchPreferences): Promise<{ listings: Home[], preferences: UserSearchPreferences }> => {
   try {
+    // Use mock endpoint if enabled
+    if (USE_MOCK_API) {
+      console.log('🧪 Using MOCK API endpoint for:', prefs.query);
+      const response = await fetch(`http://localhost:3001/api/mock-listings?query=${encodeURIComponent(prefs.query)}`);
+
+      if (!response.ok) {
+        throw new Error(`Mock API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ Got ${data.listings?.length || 0} mock listings`);
+
+      return {
+        listings: data.listings || [],
+        preferences: data.preferences || { originalQuery: prefs.query }
+      };
+    }
+
+    // Real API path
     console.log('🔍 Fetching real listings for:', prefs.query);
     if (existingPrefs) {
       console.log('🔍 Merging with existing preferences');

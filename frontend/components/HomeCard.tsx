@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home } from '../types';
 import { SavedHomesButton } from './SavedHomesButton';
 
@@ -29,8 +29,24 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Combine main image with additional images
-  const allImages = [home.imageUrl, ...(home.additionalImages || [])];
+  // Reset image index to 0 when home changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [home]);
+
+  // Get all images - prefer images array, fall back to imageUrl + additionalImages for mock data
+  const getAllImages = () => {
+    if (home.images && home.images.length > 0) {
+      return home.images;
+    }
+    // Fallback for mock data using imageUrl and additionalImages
+    if (home.imageUrl) {
+      return [home.imageUrl, ...(home.additionalImages || [])];
+    }
+    return [];
+  };
+
+  const allImages = getAllImages();
   const hasMultipleImages = allImages.length > 1;
 
   const handleAction = (direction: 'left' | 'right') => {
@@ -42,33 +58,119 @@ export const HomeCard: React.FC<HomeCardProps> = ({
     }, 300);
   };
 
-  const handlePreviousImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
-
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
-
   return (
-    <div 
+    <div
       className={`relative w-full h-[650px] rounded-[3rem] overflow-hidden glass liquid-shadow transition-all duration-300 transform ${
-        isAnimating === 'left' ? '-translate-x-full -rotate-12 opacity-0' : 
-        isAnimating === 'right' ? 'translate-x-full rotate-12 opacity-0' : 
+        isAnimating === 'left' ? '-translate-x-full -rotate-12 opacity-0' :
+        isAnimating === 'right' ? 'translate-x-full rotate-12 opacity-0' :
         'translate-x-0 rotate-0'
       }`}
     >
       <div className="h-full overflow-y-auto no-scrollbar bg-white/40">
-        {/* 1. Hero Image with Carousel */}
-        <div className="relative h-64 flex-shrink-0">
-          <img
-            src={allImages[currentImageIndex]}
-            alt={home.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
+        {/* 1. Hero Image Carousel */}
+        <div className="relative h-64 flex-shrink-0 overflow-hidden">
+          {/* No images available message */}
+          {(!home.imageUrl && home.images?.length === 0) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-greige/20">
+              <div className="flex flex-col items-center gap-3 px-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-charcoal/5 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-charcoal/30">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-black text-charcoal/60 mb-1">No Images Available</p>
+                  <a
+                    href={home.listingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] font-bold text-peri hover:underline"
+                  >
+                    View listing for images →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading indicator - only show if imageUrl is null and images array is not explicitly empty */}
+          {(!home.imageUrl && home.images?.length !== 0 && !home.additionalImages) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-greige/20">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-peri"></div>
+                <p className="text-xs font-bold text-charcoal/40">Loading images...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Image carousel container */}
+          {(home.imageUrl || allImages.length > 0) && (
+            <>
+              <div
+                className="flex transition-transform duration-300 h-full"
+                style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+              >
+                {allImages.map((imgUrl, idx) => (
+                  <img
+                    key={idx}
+                    src={imgUrl}
+                    alt={`${home.address} - Image ${idx + 1}`}
+                    className="w-full h-full object-cover flex-shrink-0"
+                  />
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              {hasMultipleImages && (
+                <>
+                  {currentImageIndex > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev - 1);
+                      }}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all active:scale-95"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft size={20} className="text-charcoal" />
+                    </button>
+                  )}
+                  {currentImageIndex < allImages.length - 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(prev => prev + 1);
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all active:scale-95"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight size={20} className="text-charcoal" />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Image Indicators */}
+              {hasMultipleImages && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-1.5">
+                  {allImages.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-full transition-all ${
+                        idx === currentImageIndex
+                          ? 'w-6 h-1.5 bg-white'
+                          : 'w-1.5 h-1.5 bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent pointer-events-none" />
 
           {/* Save Button - Top Left */}
           <div className="absolute top-4 left-4 z-10">
@@ -77,49 +179,13 @@ export const HomeCard: React.FC<HomeCardProps> = ({
 
           {/* Best Match Badge */}
           {isBestMatch && (
-            <div className="absolute top-4 right-4 px-3 py-1.5 bg-peri rounded-full shadow-lg flex items-center gap-1.5">
-              <Star size={12} className="text-white fill-white" />
-              <span className="text-[10px] font-bold uppercase tracking-wide text-white">
-                Best Match
-              </span>
-            </div>
-          )}
-
-          {/* Image Navigation Arrows */}
-          {hasMultipleImages && (
-            <>
-              <button
-                onClick={handlePreviousImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-90 z-10"
-              >
-                <ChevronLeft size={18} className="text-charcoal" />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all active:scale-90 z-10"
-              >
-                <ChevronRight size={18} className="text-charcoal" />
-              </button>
-            </>
-          )}
-
-          {/* Image Indicator Dots */}
-          {hasMultipleImages && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-              {allImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentImageIndex(index);
-                  }}
-                  className={`transition-all ${
-                    index === currentImageIndex
-                      ? 'w-6 h-1.5 bg-white'
-                      : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/75'
-                  } rounded-full`}
-                />
-              ))}
+            <div className="absolute top-4 right-4 px-4 py-2 bg-sage rounded-full shadow-lg border-2 border-white z-10">
+              <div className="flex items-center gap-2">
+                <Star size={14} className="text-white fill-white" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white">
+                  Best Match
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -211,14 +277,14 @@ export const HomeCard: React.FC<HomeCardProps> = ({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
             {/* Navigation Controls */}
-            <button 
+            <button
               onClick={onPrevious}
               disabled={!canGoPrevious}
               className="h-16 w-16 bg-white border border-charcoal/20 rounded-2xl flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={20} className="text-charcoal/60 group-active:scale-90 transition-transform" />
             </button>
-            
+
             {/* Primary Swipe Controls */}
             <button
               onClick={() => handleAction('left')}
@@ -234,8 +300,8 @@ export const HomeCard: React.FC<HomeCardProps> = ({
               <ThumbsUp size={20} className="text-red-500 group-active:scale-90 transition-transform" />
               <span className="text-[9px] font-black uppercase text-red-500/60">Like</span>
             </button>
-            
-            <button 
+
+            <button
               onClick={onNext}
               disabled={!canGoNext}
               className="h-16 w-16 bg-white border border-charcoal/20 rounded-2xl flex items-center justify-center group disabled:opacity-30 disabled:cursor-not-allowed"
@@ -246,7 +312,7 @@ export const HomeCard: React.FC<HomeCardProps> = ({
 
           <div className="flex items-center justify-between gap-3">
             {/* Link Buttons */}
-            <a 
+            <a
               href={home.listingUrl}
               target="_blank"
               rel="noreferrer"

@@ -30,6 +30,60 @@ const App: React.FC = () => {
   const [analyzing, setAnalyzing] = useState(false);
   // NEW: Track user preferences as structured JSON object
   const [userPreferences, setUserPreferences] = useState<UserSearchPreferences | null>(null);
+  // NEW: Progressive image loading state
+  const [loadedImageIndices, setLoadedImageIndices] = useState<Set<number>>(new Set());
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  // NEW: Cache full API response for fast retrieval
+  const [cachedApiResponse, setCachedApiResponse] = useState<any>(null);
+
+  // Progressive image loading function
+  const fetchImagesForProperty = async (index: number) => {
+    // Skip if already loaded, no property at index, or images already present from backend
+    if (loadedImageIndices.has(index) || !homes[index]?.redfinUrl || (homes[index]?.images?.length > 0)) {
+      return;
+    }
+
+    setIsLoadingImages(true);
+    try {
+      console.log(`🖼️ Fetching images for property ${index + 1}/${homes.length}`);
+
+      const response = await fetch('http://localhost:3001/api/fetch-property-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redfinUrl: homes[index].redfinUrl }),
+      });
+
+      const { images } = await response.json();
+
+      // Update home with images (or empty array if none available)
+      setHomes(prevHomes => {
+        const updated = [...prevHomes];
+        updated[index] = {
+          ...updated[index],
+          images: images || [],
+          imageUrl: images?.[0] || null // null means no images available
+        };
+        return updated;
+      });
+
+      setLoadedImageIndices(prev => new Set(prev).add(index));
+      console.log(`✅ Loaded ${images?.length || 0} images for property ${index + 1}`);
+    } catch (error) {
+      console.error('Failed to fetch images:', error);
+      // Set empty images array on error - will show "no images available"
+      setHomes(prevHomes => {
+        const updated = [...prevHomes];
+        updated[index] = {
+          ...updated[index],
+          images: [],
+          imageUrl: null
+        };
+        return updated;
+      });
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
 
   // Debug: Log preference changes
   useEffect(() => {
@@ -76,16 +130,29 @@ const App: React.FC = () => {
       console.log('=== INITIAL SEARCH DEBUG ===');
       console.log('🔍 Initial query:', query);
 
-      const { listings, preferences } = await fetchRecommendations({ query, priorities: [] });
+      const response = await fetchRecommendations({ query, priorities: [] });
+      const { listings, preferences } = response;
 
       console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
       console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
+
+      // Cache the entire API response for fast retrieval
+      setCachedApiResponse(response);
+      console.log('💾 Cached full API response');
 
       setHomes(listings);
       setUserPreferences(preferences); // Store preferences for later updates
 
       console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
       console.log('=== END INITIAL SEARCH DEBUG ===');
+
+      // Fetch images for first 2 properties (progressive loading)
+      if (listings.length > 0) {
+        fetchImagesForProperty(0);
+      }
+      if (listings.length > 1) {
+        setTimeout(() => fetchImagesForProperty(1), 100); // Small delay to prevent simultaneous calls
+      }
     }
 
     setCurrentIndex(0);
@@ -168,7 +235,13 @@ const App: React.FC = () => {
 
   const handleNext = () => {
     if (currentIndex < homes.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+
+      // Prefetch images for the next property (N+1)
+      if (nextIndex + 1 < homes.length) {
+        fetchImagesForProperty(nextIndex + 1);
+      }
     } else {
       setAppState(AppState.LANDING);
     }
@@ -191,13 +264,34 @@ const App: React.FC = () => {
         return [...prev, currentHome];
       });
     }
+
     // Move to next home
-    handleNext();
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < homes.length) {
+      setCurrentIndex(nextIndex);
+
+      // Prefetch images for the next property (N+1)
+      if (nextIndex + 1 < homes.length) {
+        fetchImagesForProperty(nextIndex + 1);
+      }
+    } else {
+      setAppState(AppState.LANDING);
+    }
   };
 
   const handleDislike = () => {
-    // Just move to next home
-    handleNext();
+    // Move to next home
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < homes.length) {
+      setCurrentIndex(nextIndex);
+
+      // Prefetch images for the next property (N+1)
+      if (nextIndex + 1 < homes.length) {
+        fetchImagesForProperty(nextIndex + 1);
+      }
+    } else {
+      setAppState(AppState.LANDING);
+    }
   };
 
   // Improved markdown-like text rendering
