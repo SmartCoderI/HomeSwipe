@@ -66,6 +66,33 @@ const transformRedfinListing = (listing, index, location) => {
   // Build Redfin URL
   let listingUrl = redfinUrl || `https://www.redfin.com/search?location=${encodeURIComponent(location)}`;
 
+  // Extract image URLs from the search response if available
+  const imageUrls = [];
+
+  // Check for photos/images in various possible locations
+  if (home.photos && Array.isArray(home.photos)) {
+    home.photos.forEach(photo => {
+      const url = photo.url || photo.photoUrl || photo.photoUrls?.fullScreenPhotoUrl || photo.photoUrls?.nonFullScreenPhotoUrl;
+      if (url) imageUrls.push(url);
+    });
+  }
+
+  if (home.photoUrls && Array.isArray(home.photoUrls)) {
+    home.photoUrls.forEach(url => {
+      if (typeof url === 'string') imageUrls.push(url);
+    });
+  }
+
+  if (home.primaryPhotoUrl) {
+    imageUrls.push(home.primaryPhotoUrl);
+  }
+
+  if (home.mlsPhotos && Array.isArray(home.mlsPhotos)) {
+    home.mlsPhotos.forEach(photo => {
+      if (photo.url) imageUrls.push(photo.url);
+    });
+  }
+
   // Log first property for debugging
   if (index === 0) {
     console.log(`[Transform] First property debug:`);
@@ -74,6 +101,20 @@ const transformRedfinListing = (listing, index, location) => {
     console.log(`  - URL path from API: ${propertyPath}`);
     console.log(`  - Final listingUrl: ${listingUrl}`);
     console.log(`  - Final redfinUrl: ${redfinUrl}`);
+    console.log(`  - Image URLs found in response: ${imageUrls.length}`);
+    console.log(`  - Raw home keys:`, Object.keys(home));
+    // Log any image-related fields
+    const imageFields = Object.keys(home).filter(k =>
+      k.toLowerCase().includes('photo') ||
+      k.toLowerCase().includes('image') ||
+      k.toLowerCase().includes('media')
+    );
+    if (imageFields.length > 0) {
+      console.log(`  - Image-related fields:`, imageFields);
+      imageFields.forEach(field => {
+        console.log(`    - ${field}:`, JSON.stringify(home[field]).substring(0, 200));
+      });
+    }
   }
 
   return {
@@ -82,8 +123,8 @@ const transformRedfinListing = (listing, index, location) => {
     price: price ? `$${price.toLocaleString()}` : 'Contact for price',
     address: address,
     description: `${beds} bed${beds !== 1 ? 's' : ''}, ${baths} bath${baths !== 1 ? 's' : ''} ${propertyType.toLowerCase()}${sqft ? ` - ${sqft.toLocaleString()} sq ft` : ''}`,
-    imageUrl: null, // Will be loaded progressively by frontend
-    images: [], // Will be populated on-demand via /api/fetch-property-images
+    imageUrl: imageUrls.length > 0 ? imageUrls[0] : null, // Use first image from search response, or null to trigger progressive loading
+    images: imageUrls, // Use images from search response
     redfinUrl: redfinUrl, // URL for fetching property details and images
     listingUrl: listingUrl,
     specs: {
@@ -290,7 +331,7 @@ export const searchRedfinListings = async (params, correlationId = 'unknown') =>
     }
     
     // Transform results to our Home interface format - only slice limit amount
-    const homes = listings
+    const transformedListings = listings
       .slice(0, limit)
       .map((listing, index) => {
         try {
@@ -316,7 +357,9 @@ export const searchRedfinListings = async (params, correlationId = 'unknown') =>
             price: 'Contact for price',
             address: 'Address unavailable',
             description: 'Listing data unavailable',
-            imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200',
+            imageUrl: null,
+            images: [],
+            redfinUrl: '',
             listingUrl: `https://www.redfin.com/search?location=${encodeURIComponent(location)}`,
             specs: { beds: 0, baths: 0, sqft: 0 },
             insightBullets: {
@@ -337,17 +380,61 @@ export const searchRedfinListings = async (params, correlationId = 'unknown') =>
       })
       .filter(Boolean); // Remove any null/undefined entries
 
-    if (homes.length === 0) {
+    if (transformedListings.length === 0) {
       logger.warn('No valid listings after transformation', {
         correlationId,
         originalCount: listings.length,
       });
+      return [];
     }
 
     logger.info('Successfully transformed listings', {
       correlationId,
-      transformedCount: homes.length,
+      transformedCount: transformedListings.length,
     });
+
+    // Fetch images for all properties in parallel
+    logger.info('Fetching images for all properties', {
+      correlationId,
+      propertiesCount: transformedListings.length,
+    });
+
+    const imageStartTime = Date.now();
+    const imagePromises = transformedListings.map(async (home, index) => {
+      // Skip if no redfinUrl or if images already present (from search response)
+      if (!home.redfinUrl || home.images.length > 0) {
+        return home;
+      }
+
+      try {
+        console.log(`[Images] Fetching images for property ${index + 1}/${transformedListings.length}: ${home.redfinUrl}`);
+        const photoUrls = await getPropertyDetails(home.redfinUrl);
+
+        // Limit to max 10 images
+        const limitedImages = photoUrls.slice(0, 10);
+
+        return {
+          ...home,
+          images: limitedImages,
+          imageUrl: limitedImages.length > 0 ? limitedImages[0] : null,
+        };
+      } catch (error) {
+        console.error(`[Images] Failed to fetch images for property ${index + 1}:`, error.message);
+        // Return home without images - frontend will show loading state
+        return home;
+      }
+    });
+
+    const homes = await Promise.all(imagePromises);
+    const imageDuration = Date.now() - imageStartTime;
+
+    logger.info('Image fetching complete', {
+      correlationId,
+      duration: `${imageDuration}ms`,
+      propertiesWithImages: homes.filter(h => h.images.length > 0).length,
+      totalProperties: homes.length,
+    });
+
     return homes;
   } catch (error) {
     logger.error('Error in searchRedfinListings', {

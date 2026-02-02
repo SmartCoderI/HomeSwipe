@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home } from '../types';
 
 interface HomeCardProps {
@@ -28,6 +28,11 @@ export const HomeCard: React.FC<HomeCardProps> = ({
   const [isAnimating, setIsAnimating] = useState<'left' | 'right' | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Reset image index to 0 when home changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [home]);
+
   const handleAction = (direction: 'left' | 'right') => {
     setIsAnimating(direction);
     setTimeout(() => {
@@ -48,8 +53,34 @@ export const HomeCard: React.FC<HomeCardProps> = ({
       <div className="h-full overflow-y-auto no-scrollbar bg-white/40">
         {/* 1. Hero Image Carousel */}
         <div className="relative h-64 flex-shrink-0 overflow-hidden">
-          {/* Loading indicator */}
-          {!home.imageUrl && (
+          {/* No images available message */}
+          {(!home.imageUrl && home.images?.length === 0) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-greige/20">
+              <div className="flex flex-col items-center gap-3 px-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-charcoal/5 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-charcoal/30">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-black text-charcoal/60 mb-1">No Images Available</p>
+                  <a
+                    href={home.listingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] font-bold text-peri hover:underline"
+                  >
+                    View listing for images →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading indicator - only show if imageUrl is null and images array is not explicitly empty */}
+          {(!home.imageUrl && home.images?.length !== 0) && (
             <div className="absolute inset-0 flex items-center justify-center bg-greige/20">
               <div className="flex flex-col items-center gap-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-peri"></div>
@@ -72,10 +103,6 @@ export const HomeCard: React.FC<HomeCardProps> = ({
                       src={imgUrl}
                       alt={`${home.address} - Image ${idx + 1}`}
                       className="w-full h-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        // Fallback to placeholder if image fails to load
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200';
-                      }}
                     />
                   ))
                 ) : (
@@ -83,9 +110,6 @@ export const HomeCard: React.FC<HomeCardProps> = ({
                     src={home.imageUrl}
                     alt={home.address}
                     className="w-full h-full object-cover flex-shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200';
-                    }}
                   />
                 )}
               </div>

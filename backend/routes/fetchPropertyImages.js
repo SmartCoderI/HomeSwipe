@@ -4,9 +4,6 @@ import { getPropertyDetails } from '../services/redfin Service.js';
 
 const router = express.Router();
 
-// Fallback image when no images are available
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200';
-
 /**
  * POST /api/fetch-property-images
  * Fetch property images on-demand for progressive loading
@@ -19,7 +16,7 @@ const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600585154340-be6161a5
  * Response:
  * {
  *   "success": true,
- *   "images": ["url1", "url2", ...]
+ *   "images": ["url1", "url2", ...] // Empty array if no images available
  * }
  */
 router.post('/api/fetch-property-images', async (req, res) => {
@@ -30,7 +27,7 @@ router.post('/api/fetch-property-images', async (req, res) => {
     return res.status(400).json({
       success: false,
       error: 'redfinUrl is required',
-      images: [FALLBACK_IMAGE]
+      images: []
     });
   }
 
@@ -42,10 +39,10 @@ router.post('/api/fetch-property-images', async (req, res) => {
 
     // Check if we got any images
     if (!photoUrls || photoUrls.length === 0) {
-      console.warn(`[FetchImages] No images found for property, returning fallback`);
+      console.warn(`[FetchImages] No images found for property`);
       return res.json({
         success: true,
-        images: [FALLBACK_IMAGE]
+        images: []
       });
     }
 
@@ -67,11 +64,11 @@ router.post('/api/fetch-property-images', async (req, res) => {
     console.error('[FetchImages] Error fetching property images:', error.message);
     console.error('[FetchImages] Error details:', error);
 
-    // Return fallback image on error instead of failing
+    // Return empty array on error - frontend will display "no images available"
     return res.json({
       success: false,
       error: error.message,
-      images: [FALLBACK_IMAGE]
+      images: []
     });
   }
 });
