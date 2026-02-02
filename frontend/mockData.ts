@@ -203,3 +203,9 @@ export const mockHomes: Home[] = [
     }
   }
 ];
+
+// Group 1: Initial search results (IDs 1, 2, 3)
+export const initialMockHomes = mockHomes.filter(h => ['1', '2', '3'].includes(h.id));
+
+// Group 2: Refine search results (IDs 4, 5)
+export const refinedMockHomes = mockHomes.filter(h => ['4', '5'].includes(h.id));

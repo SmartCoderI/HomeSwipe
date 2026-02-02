@@ -9,14 +9,18 @@ import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
-import { mockHomes } from './mockData';
-import { AuthProvider } from './contexts/AuthContext';
+import { initialMockHomes, refinedMockHomes } from './mockData';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from './firebase/config';
 
 // Set to true to use mock data for faster frontend testing
 const USE_MOCK_DATA = true;
 //const USE_MOCK_DATA = false;
 
-const App: React.FC = () => {
+// Inner component that can use useAuth hook
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
   const [homes, setHomes] = useState<Home[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -108,7 +112,7 @@ const App: React.FC = () => {
     if (USE_MOCK_DATA && appState === AppState.LANDING) {
       // Auto-load mock data after a brief delay to simulate real flow
       const timer = setTimeout(() => {
-        setHomes(mockHomes);
+        setHomes(initialMockHomes);  // Only IDs 1, 2, 3 for initial search
         setUserQuery('test search');
         setCurrentIndex(0);
         setAppState(AppState.BROWSING);
@@ -125,7 +129,7 @@ const App: React.FC = () => {
     if (USE_MOCK_DATA) {
       // Simulate API delay for realistic feel
       await new Promise(resolve => setTimeout(resolve, 500));
-      setHomes(mockHomes);
+      setHomes(initialMockHomes);  // Only IDs 1, 2, 3 for initial search
     } else {
       console.log('=== INITIAL SEARCH DEBUG ===');
       console.log('🔍 Initial query:', query);
@@ -184,7 +188,7 @@ const App: React.FC = () => {
         setUserPreferences(mockMergedPrefs);
       }
 
-      setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
+      setHomes([...homes.slice(0, currentIndex + 1), ...refinedMockHomes]);  // Only IDs 4, 5 for refine search
     } else {
       // Pass existing preferences to merge instead of re-extracting everything
       console.log('=== REFINE SEARCH DEBUG ===');
@@ -253,7 +257,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     const currentHome = homes[currentIndex];
     if (currentHome) {
       // Add to liked homes if not already there
@@ -263,6 +267,20 @@ const App: React.FC = () => {
         }
         return [...prev, currentHome];
       });
+
+      // Save to Firebase if authenticated
+      if (user && isAuthenticated) {
+        try {
+          const docRef = doc(db, 'users', user.uid, 'savedHomes', currentHome.id);
+          await setDoc(docRef, {
+            homeData: currentHome,
+            savedAt: new Date().toISOString(),
+          });
+          console.log('✅ Home saved to Firebase:', currentHome.id);
+        } catch (error) {
+          console.error('❌ Error saving home:', error);
+        }
+      }
     }
 
     // Move to next home
@@ -588,9 +606,14 @@ const App: React.FC = () => {
     );
   };
 
+  return renderContent();
+};
+
+// Main App component that provides AuthProvider
+const App: React.FC = () => {
   return (
     <AuthProvider>
-      {renderContent()}
+      <AppContent />
     </AuthProvider>
   );
 };
