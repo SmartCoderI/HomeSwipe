@@ -4,182 +4,183 @@ import { Home } from './types';
 export const mockHomes: Home[] = [
   {
     id: "1",
-    title: "Modern loft with high ceilings",
-    price: "$1,998,000",
-    address: "1122 Vasquez Ave, Sunnyvale, CA 94086",
-    description: "Stunning modern loft featuring high ceilings, open floor plan, and premium finishes throughout. Located in the heart of Sunnyvale with easy access to tech campuses.",
-    imageUrl: "https://photos.zillowstatic.com/fp/c9282436eb91b715fcba27d6dde03692-cc_ft_1536.webp",
-    listingUrl: "https://www.zillow.com/homedetails/1122-Vasquez-Ave-Sunnyvale-CA-94086/19519571_zpid/",
+    title: "East San Jose Starter Home with Highway Access",
+    price: "$950,000",
+    address: "1616 Waverly Ave, San Jose, CA 95122",
+    description: "Affordable East San Jose single-family home offering urban convenience, low environmental risk, and fast access to highways and downtown.",
+    imageUrl: "https://www.redfin.com/CA/San-Jose/1616-Waverly-Ave-95122/home/1703532",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/1616-Waverly-Ave-95122/home/1703532",
     specs: {
       beds: 3,
       baths: 2,
-      sqft: 1372
+      sqft: 1094
     },
     insightBullets: {
-      style: "Modern minimalist with industrial touches",
-      vibe: "Urban chic, perfect for tech professionals",
-      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, No nearby earthquake faults",
-      safety: "Very safe - gated community, 24/7 security. Crime rate 40% below national average",
-      financials: "Property tax ~$9K/year, HOA $350/month",
-      schools: "Cherry Chase Elementary (9/10) - 0.5 miles, Sunnyvale Middle (8/10) - 1.2 miles",
-      hospitals: "El Camino Hospital - 2.3 miles, Stanford Health Care - 8 miles",
-      transit: "Sunnyvale Caltrain - 5 min walk, VTA Light Rail - 10 min walk",
-      greenSpace: "Ortega Park - 0.3 miles, Baylands Park - 2 miles"
+      style: "Traditional single-family home with practical interior updates",
+      vibe: "Urban residential, value-focused living with city convenience",
+      risk: "Flood Zone D (outside SFHA, minimal flood risk), Low fire hazard, Standard Bay Area seismic exposure with no known nearby faults",
+      safety: "Crime profile below city average",
+      financials: "Property tax ~$990/month, HOA $0/month",
+      schools: "William C. Overfelt High School (3/10), ~0.5 miles, schools are generally lower-rated compared to West Valley areas",
+      hospitals: "Regional Medical Center of San Jose (rating 3.9, 2.0 mi), Fresenius Medical Care at Regional Medical Center (2.8 mi), Dr. Hidhi D. Sikka, DDS (rating 4.8, 2.8 mi)",
+      transit: "Capitol Caltrain Station ~2.2 miles; VTA bus routes nearby; quick access to US-101, I-280, and Capitol Expressway",
+      greenSpace: "Welch Park ~0.7 mi; Municipal Rose Garden ~5.4 miles for larger regional green space"
     },
     matchInsights: [
-      "5 min walk to Sunnyvale Caltrain station",
-      "3 min drive to Apple Park",
-      "Walk Score: 92 - Very walkable"
+      "Lower-cost entry into San Jose single-family homeownership",
+      "Well-suited for buyers prioritizing commute flexibility over school rankings",
+      "Practical urban living"
     ],
     analysis: {
-      nature: "Nearby parks: Ortega Park (0.3 miles), Baylands Park (2 miles)",
-      commute: "15 min to Mountain View, 20 min to Palo Alto via 101",
-      safety: "Crime rate 40% below national average",
-      schools: "Top-rated schools: Cherry Chase Elementary (9/10)"
+      nature: "Urban neighborhood with access to local parks and recreational facilities within a short drive",
+      commute: "Quick access to Highway 101 and Capitol Expressway; ~10–15 minutes to Downtown San Jose depending on traffic",
+      safety: "Higher crime exposure than West Valley neighborhoods, consistent with central East San Jose patterns",
+      schools: "Assigned schools are generally low-rated overall"
     }
   },
   {
     id: "2",
-    title: "Cozy Craftsman with backyard",
-    price: "$1,125,000",
-    address: "456 Oak Avenue, Sunnyvale, CA 94086",
-    description: "Charming Craftsman home with beautifully maintained backyard. Perfect for families seeking character and space in a quiet neighborhood.",
-    imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800",
-    listingUrl: "https://www.zillow.com/homes/456-Oak-Ave-Sunnyvale-CA-94086_rb/",
+    title: "Cul-de-Sac Home Near East Foothills",
+    price: "$998,000",
+    address: "366 Cureton Pl, San Jose, CA 95127",
+    description: "Single-Family Home on Quiet Cul-de-Sac in East San Jose Foothills",
+    imageUrl: "https://www.redfin.com/CA/San-Jose/366-Cureton-Pl-95127/home/921650",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/366-Cureton-Pl-95127/home/921650",
     specs: {
-      beds: 4,
-      baths: 3,
-      sqft: 2400
+      beds: 3,
+      baths: 2,
+      sqft: 1358
     },
     insightBullets: {
-      style: "Classic Craftsman with modern updates",
-      vibe: "Family-friendly, quiet suburban feel",
-      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, Liquefaction zone: Not identified",
-      safety: "Excellent - family neighborhood, active community watch. One of safest neighborhoods in Sunnyvale",
-      financials: "Property tax ~$11K/year, No HOA",
-      schools: "Bishop Elementary (10/10) - 0.3 miles, Sunnyvale High (9/10) - 1.5 miles",
-      hospitals: "El Camino Hospital - 3.1 miles, Kaiser Permanente - 4.2 miles",
-      transit: "VTA Bus Stop - 2 min walk, Sunnyvale Caltrain - 12 min drive",
-      greenSpace: "Washington Park - 10 min walk, Las Palmas Park - 0.8 miles"
+      style: "Traditional single-family home with a practical, no-frills layout",
+      vibe: "Quiet residential living on a low-traffic cul-de-sac",
+      risk: "Flood Zone X (area of minimal flood hazard), Low fire hazard, Standard Bay Area seismic exposure, No Superfund sites nearby",
+      safety: "Crime profile stronger than many East San Jose areas",
+      financials: "Property tax ~$12.4K/year, No HOA",
+      schools: "James Lick High School (4/10) - 0.8 miles; schools are generally mid-to-lower rated compared to West San Jose",
+      hospitals: "Inspire Behavioral Health (rating 4.9, 1.3 mi), Dr. Nidhi D. Sikka, DDS (rating 4.8, 1.7 mi), Bay Area Healthcare – Kashif Abdullah, MD, MPH (rating 4.5, 1.8 mi)",
+      transit: "Berryessa / North San Jose BART Station ~3.2 miles; primarily car-based access to Capitol Expressway and US-101",
+      greenSpace: "Alum Rock Park ~2.0 miles, offering regional hiking and open space"
     },
     matchInsights: [
-      "10 min walk to Washington Park",
-      "8 min drive to Google campus",
-      "Great schools within walking distance"
+      "Cul-de-sac location with reduced traffic and added privacy",
+      "Closer proximity to East Foothills and Alum Rock Park compared to central East San Jose homes",
+      "Balanced option for buyers seeking quieter residential living without West Valley pricing"
     ],
     analysis: {
-      nature: "Large fenced backyard, mature trees, gardening space",
-      commute: "12 min to Google, 18 min to Facebook via 237",
-      safety: "One of safest neighborhoods in Sunnyvale",
-      schools: "Excellent schools: Bishop Elementary (10/10)"
+      nature: "Residential neighborhood near the East Foothills with access to local parks and open space by car",
+      commute: "Driving-based commute with access to Capitol Expressway, US-101, and downtown San Jose",
+      safety: "Above-average crime ratings for the surrounding East San Jose area, enhanced by cul-de-sac layout",
+      schools: "Schools in this area are generally rated on the lower to mid range compared to West San Jose"
     }
   },
   {
     id: "3",
-    title: "Contemporary townhouse with garage",
-    price: "$789,000",
-    address: "789 Maple Drive, Sunnyvale, CA 94089",
-    description: "Newly renovated contemporary townhouse with attached 2-car garage. Modern amenities in a convenient location near shopping and transit.",
-    imageUrl: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=800",
-    listingUrl: "https://www.zillow.com/homes/789-Maple-Dr-Sunnyvale-CA-94089_rb/",
-    specs: {
-      beds: 2,
-      baths: 2.5,
-      sqft: 1650
-    },
-    insightBullets: {
-      style: "Sleek contemporary with smart home features",
-      vibe: "Modern urban living, low maintenance",
-      risk: "Flood Zone X (minimal risk), Fire hazard: Very low, No Superfund sites within 10 miles, No nearby faults",
-      safety: "Secure building access, well-lit parking. Gated community with security cameras",
-      financials: "Property tax ~$8K/year, HOA $420/month",
-      schools: "Cumberland Elementary (8/10) - 0.6 miles, Cupertino High (9/10) - 3.2 miles",
-      hospitals: "El Camino Hospital - 1.8 miles, Stanford Health Care - 9 miles",
-      transit: "Sunnyvale Caltrain - 7 min walk, VTA Light Rail - 5 min walk",
-      greenSpace: "Las Palmas Park - 0.5 miles, Sunnyvale Baylands - 3.2 miles"
-    },
-    matchInsights: [
-      "2 min walk to Whole Foods and coffee shops",
-      "7 min to Sunnyvale Caltrain",
-      "Pet-friendly community with dog park"
-    ],
-    analysis: {
-      nature: "Nearby: Las Palmas Park (0.5 miles), recreational facilities",
-      commute: "Easy access to 101, 237, and 280 freeways",
-      safety: "Gated community with security cameras",
-      schools: "Good schools nearby: Cumberland Elementary (8/10)"
-    }
-  },
-  {
-    id: "4",
-    title: "Luxury condo with mountain views",
-    price: "$1,450,000",
-    address: "321 Hillcrest Road, Sunnyvale, CA 94087",
-    description: "Stunning luxury condo with panoramic mountain views. High-end finishes, spacious layout, and premium amenities in prestigious location.",
-    imageUrl: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?q=80&w=800",
-    listingUrl: "https://www.zillow.com/homes/321-Hillcrest-Rd-Sunnyvale-CA-94087_rb/",
+    title: "Evergreen Home Near Foothills & Parks",
+    price: "$1,248,000",
+    address: "3279 Cuesta Dr, San Jose, CA 95148",
+    description: "Well-Maintained Evergreen Home Near Foothills with Private Yard",
+    imageUrl: "https://www.redfin.com/CA/San-Jose/3279-Cuesta-Dr-95148/home/630176",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/3279-Cuesta-Dr-95148/home/630176",
     specs: {
       beds: 3,
-      baths: 2.5,
-      sqft: 2200
+      baths: 2,
+      sqft: 1495
     },
     insightBullets: {
-      style: "Luxury modern with premium materials",
-      vibe: "Upscale living, concierge service available",
-      risk: "Flood Zone X (minimal risk), Fire hazard: Moderate (hillside area), No Superfund sites nearby, 2 faults within 5 miles",
-      safety: "High-end security system, secure parking garage. Top-tier security with 24/7 surveillance",
-      financials: "Property tax ~$14.5K/year, HOA $680/month",
-      schools: "San Miguel Elementary (10/10) - 0.4 miles, Homestead High (9/10) - 2.1 miles",
-      hospitals: "El Camino Hospital - 2.8 miles, Stanford Health Care - 7.5 miles",
-      transit: "VTA Light Rail - 8 min drive, Sunnyvale Caltrain - 15 min drive",
-      greenSpace: "Rooftop terrace access, Santa Cruz Mountain views. Rancho San Antonio - 4 miles"
+      style: "Traditional single-family home with a practical, family-oriented layout",
+      vibe: "Quiet suburban living in a well-established Evergreen neighborhood",
+      risk: "Flood Zone D (outside SFHA, minimal flood risk), Low fire hazard, Standard Bay Area seismic exposure, No Superfund sites nearby",
+      safety: "Strong safety profile than neighborhoods",
+      financials: "Property tax ~$15.6K/year, no HOA",
+      schools: "Mt. Pleasant High School (4/10), ~0.7 miles; school quality varies across Evergreen by grade level",
+      hospitals: "San Jose Foothill Family Community Clinic (rating 4.3, 0.8 mi), Working Feet Clinic (rating 5.0, 2.5 mi), DaVita Tully Road Home Training (rating 4.0, 2.7 mi)",
+      transit: "Capitol Caltrain Station ~4.2 miles; primarily car-dependent with access to Capitol Expressway and US-101 ",
+      greenSpace: "Lake Cunningham Regional Park ~1.0 miles; Joseph D. Grant County Park ~4.2 miles; "
     },
     matchInsights: [
-      "12 min drive to Apple Infinite Loop",
-      "15 min to Stanford University",
-      "Elevator building with fitness center"
+      "Larger lot and square footage compared to central San Jose homes",
+      "Evergreen location with a quieter, suburban feel",
+      "Good balance of space, neighborhood stability, and regional park access"
     ],
     analysis: {
-      nature: "Scenic views of Santa Cruz mountains, rooftop terrace access",
-      commute: "Prime location between Apple, Google, and Meta campuses",
-      safety: "Top-tier security, gated complex with 24/7 surveillance",
-      schools: "Premier schools: San Miguel Elementary (10/10)"
+      nature: "Foothill-adjacent environment with access to local parks and open space by car",
+      commute: "riving-based commute via Capitol Expressway and Highway 101 to other parts of San Jose",
+      safety: "One of the stronger safety profiles among East and South San Jose neighborhoods",
+      schools: "Local schools are mixed, with ratings varying by grade level across the Evergreen area"
+    }
+  },
+  /* school district*/ 
+  {
+    id: "4",
+    title: "West Valley Home Near Cupertino High",
+    price: "$2,598,000",
+    address: "821 Raintree Dr, San Jose, CA 95129",
+    description: "Quiet West Valley living with strong schools, low environmental risk, and convenient Silicon Valley access.",
+    imageUrl: "https://www.redfin.com/CA/San-Jose/821-Raintree-Dr-95129/home/801833",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/821-Raintree-Dr-95129/home/801833",
+    specs: {
+      beds: 3,
+      baths: 2,
+      sqft: 1653
+    },
+    insightBullets: {
+      style: "Classic single-story ranch with practical updates",
+      vibe: "Quiet, established West Valley neighborhood with long-term residents",
+      risk: "Flood Zone D (outside SFHA, minimal flood risk), Low fire hazard, No nearby earthquake faults or liquefaction zones, No Superfund sites within 10 miles",
+      safety: "Calm residential streets",
+      financials: "Estimated property tax ~$31.2K/year, HOA ~$0/month",
+      schools: "Cupertino High (10/10, 1.0 mi)",
+      hospitals: "Kaiser Permanente San Jose (1.3 mi), Kaiser Santa Clara (1.6 mi), plus multiple regional medical centers",
+      transit: "Lawrence Caltrain, 4.0 miles, ~12-15 min drive",
+      greenSpace: "20 nearby parks; closest major park is Ortega Park (2.7 mi); closest pocket park is John Mise Park(0.4 mi)"
+    },
+    matchInsights: [
+      "Ideal for families prioritizing top-ranked Cupertino-area schools",
+      "Low environmental and geological risk compared to many Bay Area neighborhoods",
+      "Balanced lifestyle with suburban calm and practical commute access"
+    ],
+    analysis: {
+      nature: "Access to multiple city parks and recreational spaces, though not directly adjacent to open preserves",
+      commute: "entrally positioned for Cupertino, Santa Clara, and North San Jose tech corridors",
+      safety: "Above-average crime ratings with stable neighborhood patterns",
+      schools: "Dense cluster of well-rated K–12 options within a 1-mile radius"
     }
   },
   {
     id: "5",
-    title: "Charming bungalow near downtown",
-    price: "$975,000",
-    address: "654 Birch Lane, Sunnyvale, CA 94086",
-    description: "Adorable renovated bungalow just blocks from downtown Sunnyvale. Perfect blend of historic charm and modern convenience.",
-    imageUrl: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?q=80&w=800",
-    listingUrl: "https://www.zillow.com/homes/654-Birch-Ln-Sunnyvale-CA-94086_rb/",
+    title: "West San Jose Home in Lynbrook School Zone",
+    price: "$2,499,888",
+    address: "5733 Harder St, San Jose, CA 95129",
+    description: "Compact West San Jose home offering top-tier Cupertino-area schools, low environmental risk, and strong long-term location value.",
+    imageUrl: "https://www.redfin.com/CA/San-Jose/5733-Harder-St-95129/home/1709719",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/5733-Harder-St-95129/home/1709719",
     specs: {
       beds: 3,
       baths: 2,
-      sqft: 1750
+      sqft: 1128
     },
     insightBullets: {
-      style: "Charming bungalow with vintage character",
-      vibe: "Walkable urban neighborhood, close to amenities",
-      risk: "Flood Zone X (minimal risk), Fire hazard: Low, No Superfund sites nearby, No nearby faults identified",
-      safety: "Safe neighborhood, well-maintained streets. Active neighborhood watch, family-oriented community",
-      financials: "Property tax ~$9.7K/year, No HOA",
-      schools: "San Miguel Elementary (9/10) - 0.2 miles, Fremont High (8/10) - 1.8 miles",
-      hospitals: "El Camino Hospital - 2.5 miles, Kaiser Permanente - 3.8 miles",
-      transit: "Caltrain station - 8 min walk, VTA Bus - 3 min walk",
-      greenSpace: "Community gardens nearby, Tree-lined streets. Washington Park - 0.6 miles"
+      style: "Classic California single-family home with efficient use of space",
+      vibe: "Quiet, family-oriented West San Jose neighborhood valued for school access and stability",
+      risk: "Flood Zone D (outside SFHA, minimal flood risk), Low fire hazard, No nearby earthquake faults or liquefaction zones, No Superfund sites",
+      safety: "Crime profile consistent with surrounding West San Jose areas, low through-traffic residential streets",
+      financials: "Property tax ~$31.2K/year, HOA $0/month",
+      schools: "Lynbrook High School (10/10) ~0.3 miles, part of the highly sought-after Cupertino-area school corridor",
+      hospitals: "Kaiser Permanente San Jose (rating 2.9, 1.3 mi), Kaiser Permanente Santa Clara Medical Center (rating 4.4, 1.6 mi), Kaiser Permanente Child & Adolescent Psychiatry (rating 4.4, 1.8 mi)",
+      transit: "Lawrence Caltrain Station ~4.0 miles (~12–15 min drive); primarily car-dependent area",
+      greenSpace: "Local neighborhood parks nearby; Big Basin Redwoods State Park ~17.3 miles for regional outdoor recreation"
     },
     matchInsights: [
-      "5 min walk to downtown Sunnyvale restaurants",
-      "8 min walk to Caltrain station",
-      "Steps from farmers market on weekends"
+      "Excellent option for buyers prioritizing Lynbrook High and Cupertino-area schools",
+      "Location-driven value with strong long-term appreciation potential",
+      "Low environmental risk profile compared to many Bay Area neighborhoods"
     ],
     analysis: {
-      nature: "Tree-lined streets, community gardens nearby",
-      commute: "Excellent transit access, bike-friendly routes to tech campuses",
-      safety: "Active neighborhood watch, family-oriented community",
-      schools: "Strong schools: San Miguel Elementary (9/10)"
+      nature: "Primarily suburban residential setting with access to local parks and larger regional open spaces by car",
+      commute: "Convenient driving access to Cupertino, Santa Clara, and central Silicon Valley via I-280",
+      safety: "Consistently stable neighborhood conditions typical of West San Jose",
+      schools: "Cupertino-area public schools are a major value driver for this location"
     }
   }
 ];
