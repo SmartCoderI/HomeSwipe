@@ -492,9 +492,112 @@ const extractPhotoUrls = (data) => {
 };
 
 /**
- * Fetch detailed property information including real images
+ * Extract school insights from Redfin property details
+ * @param {Object} schoolsInfo - schoolsAndDistrictsInfo from Redfin response
+ * @returns {string} Formatted school insight
+ */
+const extractSchoolInsights = (schoolsInfo) => {
+  const schools = schoolsInfo?.servingThisHomeSchools || [];
+  if (schools.length === 0) return "School data unavailable";
+
+  const topSchool = schools[0];
+  const rating = topSchool.greatSchoolsRating || "N/A";
+  const distance = topSchool.distanceInMiles || "N/A";
+
+  // Find test scores from granular ratings
+  const granular = topSchool.schoolGranularRatings || [];
+  const testScore = granular.find(r => r.schoolGranularRatingType === "Test Scores");
+
+  return `${topSchool.name} (Rating: ${rating}/10, ${distance} mi). Test Scores: ${testScore?.schoolGranularRatingValue || "N/A"}/10`;
+};
+
+/**
+ * Extract transit/walkability insights from Redfin property details
+ * @param {Object} walkScoreInfo - walkScoreInfo from Redfin response
+ * @returns {string} Formatted transit insight
+ */
+const extractTransitInsights = (walkScoreInfo) => {
+  const scores = walkScoreInfo?.walkScoreData || {};
+  if (!scores.walkScore) return "Transit data unavailable";
+
+  const walkScore = scores.walkScore.value || 0;
+  const transitScore = scores.transitScore?.value || 0;
+  const bikeScore = scores.bikeScore?.value || 0;
+
+  return `Walk Score ${walkScore} (${scores.walkScore.description || ""}), Transit Score ${transitScore}, Bike Score ${bikeScore}`;
+};
+
+/**
+ * Extract amenity insights from nearby points of interest
+ * @param {Object} aroundHomeInfo - aroundThisHomeSectionInfo from Redfin response
+ * @returns {string} Formatted amenity insight
+ */
+const extractAmenityInsights = (aroundHomeInfo) => {
+  const pois = aroundHomeInfo?.pointOfInterestList || [];
+  if (pois.length === 0) return "Amenity data unavailable";
+
+  // Categorize POIs
+  const restaurants = pois.filter(p => p.categories?.some(c => c.includes("Restaurant"))).length;
+  const parks = pois.filter(p => p.categories?.some(c => c.includes("Park"))).length;
+  const shops = pois.filter(p => p.categories?.some(c => c.includes("Shopping") || c.includes("Store"))).length;
+
+  const parts = [];
+  if (restaurants > 0) parts.push(`${restaurants} restaurants`);
+  if (parks > 0) parts.push(`${parks} parks`);
+  if (shops > 0) parts.push(`${shops} shops`);
+
+  return parts.length > 0 ? `Nearby: ${parts.join(", ")}` : "Limited amenities nearby";
+};
+
+/**
+ * Extract financial insights from property address info
+ * @param {Object} addressInfo - addressSectionInfo from Redfin response
+ * @returns {string} Formatted financial insight
+ */
+const extractFinancialInsights = (addressInfo) => {
+  const pricePerSqFt = addressInfo?.pricePerSqFt;
+  const sqft = addressInfo?.sqFt;
+
+  if (!pricePerSqFt) return "Financial data unavailable";
+
+  return `$${pricePerSqFt}/sqft${sqft ? ` (${sqft.toLocaleString()} sqft total)` : ""}`;
+};
+
+/**
+ * Extract style/property insights from address info
+ * @param {Object} addressInfo - addressSectionInfo from Redfin response
+ * @returns {string} Formatted style insight
+ */
+const extractStyleInsights = (addressInfo) => {
+  const yearBuilt = addressInfo?.yearBuilt;
+  const propertyType = addressInfo?.propertyTypeDimension;
+
+  if (!yearBuilt) return "Property details unavailable";
+
+  return `${yearBuilt} ${propertyType || "property"}`;
+};
+
+/**
+ * Extract all enriched insight data from Redfin property details
+ * @param {Object} redfinData - Full Redfin API response
+ * @returns {Object} Enriched data for all insight categories
+ */
+const extractInsightData = (redfinData) => {
+  const aboveTheFold = redfinData?.aboveTheFold || {};
+
+  return {
+    schools: extractSchoolInsights(aboveTheFold.schoolsAndDistrictsInfo),
+    transit: extractTransitInsights(aboveTheFold.walkScoreInfo),
+    amenities: extractAmenityInsights(aboveTheFold.aroundThisHomeSectionInfo),
+    financials: extractFinancialInsights(aboveTheFold.addressSectionInfo),
+    style: extractStyleInsights(aboveTheFold.addressSectionInfo)
+  };
+};
+
+/**
+ * Fetch detailed property information including real images and enriched data
  * @param {string} redfinUrl - Full Redfin URL (e.g., "https://www.redfin.com/NY/New-York/...")
- * @returns {Promise<Array<string>>} Array of photo URLs
+ * @returns {Promise<Object>} Object with photos array and enrichedData object
  */
 export const getPropertyDetails = async (redfinUrl) => {
   const RAPIDAPI_KEY = getApiKey();
@@ -545,7 +648,14 @@ export const getPropertyDetails = async (redfinUrl) => {
       console.log(`✅ Found ${photoUrls.length} photo URLs for property`);
     }
 
-    return photoUrls;
+    // Extract enriched insight data from the same response
+    const enrichedData = extractInsightData(data);
+    console.log(`📊 Extracted enriched data:`, enrichedData);
+
+    return {
+      photos: photoUrls,
+      enrichedData: enrichedData
+    };
   } catch (error) {
     console.error('❌ Error fetching property details:', error.message);
     throw error;

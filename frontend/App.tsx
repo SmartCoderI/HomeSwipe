@@ -8,9 +8,11 @@ import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getSavedHomes, addSavedHome, removeSavedHome } from './services/savedHomesService';
 
 const AppContent: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
   const [homes, setHomes] = useState<Home[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,6 +29,9 @@ const AppContent: React.FC = () => {
   // NEW: Progressive image loading state
   const [loadedImageIndices, setLoadedImageIndices] = useState<Set<number>>(new Set());
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  // NEW: Progressive deep analysis loading state
+  const [loadedDeepAnalysisIndices, setLoadedDeepAnalysisIndices] = useState<Set<number>>(new Set());
+  const [isLoadingDeepAnalysis, setIsLoadingDeepAnalysis] = useState(false);
   // NEW: Cache full API response for fast retrieval
   const [cachedApiResponse, setCachedApiResponse] = useState<any>(null);
 
@@ -47,21 +52,36 @@ const AppContent: React.FC = () => {
         body: JSON.stringify({ redfinUrl: homes[index].redfinUrl }),
       });
 
-      const { images } = await response.json();
+      const { images, enrichedData } = await response.json();
 
-      // Update home with images (or empty array if none available)
+      // Update home with images and enriched insight data
       setHomes(prevHomes => {
         const updated = [...prevHomes];
+        const currentHome = updated[index];
+
         updated[index] = {
-          ...updated[index],
+          ...currentHome,
           images: images || [],
-          imageUrl: images?.[0] || null // null means no images available
+          imageUrl: images?.[0] || null, // null means no images available
+          insightBullets: {
+            ...currentHome.insightBullets,
+            // Only update if enrichedData provides better info than placeholders
+            schools: enrichedData?.schools || currentHome.insightBullets.schools,
+            transit: enrichedData?.transit || currentHome.insightBullets.transit,
+            financials: enrichedData?.financials || currentHome.insightBullets.financials,
+            style: enrichedData?.style || currentHome.insightBullets.style,
+            // Keep vibe from Gemini, append amenity context if available
+            vibe: enrichedData?.amenities
+              ? `${currentHome.insightBullets.vibe}. ${enrichedData.amenities}`
+              : currentHome.insightBullets.vibe
+          }
         };
         return updated;
       });
 
       setLoadedImageIndices(prev => new Set(prev).add(index));
       console.log(`✅ Loaded ${images?.length || 0} images for property ${index + 1}`);
+      console.log(`📊 Enriched data applied:`, enrichedData);
     } catch (error) {
       console.error('Failed to fetch images:', error);
       // Set empty images array on error - will show "no images available"
@@ -78,6 +98,153 @@ const AppContent: React.FC = () => {
       setIsLoadingImages(false);
     }
   };
+
+  // Progressive deep analysis loading function
+  const fetchDeepAnalysisForProperty = async (index: number) => {
+    // Skip if already loaded or no property at index
+    if (loadedDeepAnalysisIndices.has(index) || !homes[index]?.address) {
+      return;
+    }
+
+    setIsLoadingDeepAnalysis(true);
+    try {
+      console.log(`🔍 Fetching deep analysis for property ${index + 1}/${homes.length}`);
+
+      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(homes[index].address)}`);
+
+      if (!response.ok) {
+        throw new Error('Deep analysis API request failed');
+      }
+
+      const deepAnalysisData = await response.json();
+
+      // Extract insight bullets from the aggregated data
+      const { data } = deepAnalysisData;
+
+      // Update home with deep analysis insights
+      setHomes(prevHomes => {
+        const updated = [...prevHomes];
+        const currentHome = updated[index];
+
+        updated[index] = {
+          ...currentHome,
+          insightBullets: {
+            ...currentHome.insightBullets,
+            // Update risk, safety, hospitals, greenSpace with real data
+            risk: formatRiskInsight(data?.flood, data?.fire, data?.earthquake, data?.superfund),
+            safety: formatSafetyInsight(data?.crime),
+            hospitals: formatHospitalsInsight(data?.hospitals),
+            greenSpace: formatGreenSpaceInsight(data?.greenSpace)
+          }
+        };
+        return updated;
+      });
+
+      setLoadedDeepAnalysisIndices(prev => new Set(prev).add(index));
+      console.log(`✅ Loaded deep analysis for property ${index + 1}`);
+    } catch (error) {
+      console.error('Failed to fetch deep analysis:', error);
+      // Keep placeholder values on error
+    } finally {
+      setIsLoadingDeepAnalysis(false);
+    }
+  };
+
+  // Helper functions to format deep analysis data into insight bullets
+  const formatRiskInsight = (flood: any, fire: any, earthquake: any, superfund: any): string => {
+    if (!flood && !fire && !earthquake && !superfund) {
+      return "Risk data unavailable";
+    }
+
+    const risks: string[] = [];
+
+    if (flood && !flood.error) {
+      const zone = flood.zone || 'Unknown';
+      if (zone !== 'X' && zone !== 'Unknown') {
+        risks.push(`Flood Zone ${zone}`);
+      }
+    }
+
+    if (fire && !fire.error && fire.hazardLevel) {
+      risks.push(`Fire: ${fire.hazardLevel}`);
+    }
+
+    if (earthquake && !earthquake.error && earthquake.riskLevel) {
+      risks.push(`Earthquake: ${earthquake.riskLevel}`);
+    }
+
+    if (superfund && !superfund.error && superfund.sites && superfund.sites.length > 0) {
+      risks.push(`${superfund.sites.length} superfund site(s) nearby`);
+    }
+
+    return risks.length > 0 ? risks.join(', ') : "Low environmental risk";
+  };
+
+  const formatSafetyInsight = (crime: any): string => {
+    if (!crime || crime.error) {
+      return "Safety data unavailable";
+    }
+
+    if (crime.crimeRate) {
+      return `Crime rate: ${crime.crimeRate} incidents/1000 residents`;
+    }
+
+    return "Safety data limited";
+  };
+
+  const formatHospitalsInsight = (hospitals: any): string => {
+    if (!hospitals || hospitals.error || !hospitals.facilities) {
+      return "Hospital data unavailable";
+    }
+
+    const count = hospitals.facilities.length;
+    if (count === 0) {
+      return "No hospitals found nearby";
+    }
+
+    const nearest = hospitals.facilities[0];
+    const distance = nearest.distance ? `${nearest.distance.toFixed(1)} mi` : '';
+
+    return `${count} hospital(s) nearby${distance ? `, nearest: ${distance}` : ''}`;
+  };
+
+  const formatGreenSpaceInsight = (greenSpace: any): string => {
+    if (!greenSpace || greenSpace.error || !greenSpace.parks) {
+      return "Green space data unavailable";
+    }
+
+    const count = greenSpace.parks.length;
+    if (count === 0) {
+      return "Limited green space nearby";
+    }
+
+    const nearest = greenSpace.parks[0];
+    const distance = nearest.distance ? `${nearest.distance.toFixed(1)} mi` : '';
+
+    return `${count} park(s) nearby${distance ? `, nearest: ${distance}` : ''}`;
+  };
+
+  // Load saved homes when user authenticates
+  useEffect(() => {
+    const loadSavedHomes = async () => {
+      if (isAuthenticated && user) {
+        console.log('🔄 Loading saved homes for user:', user.uid);
+        try {
+          const savedHomes = await getSavedHomes(user.uid);
+          setLikedHomes(savedHomes);
+          console.log(`✅ Loaded ${savedHomes.length} saved homes`);
+        } catch (error) {
+          console.error('❌ Failed to load saved homes:', error);
+        }
+      } else {
+        // Clear liked homes when user logs out
+        setLikedHomes([]);
+        console.log('🔓 User logged out, cleared saved homes');
+      }
+    };
+
+    loadSavedHomes();
+  }, [isAuthenticated, user]);
 
   // Debug: Log preference changes
   useEffect(() => {
@@ -120,12 +287,16 @@ const AppContent: React.FC = () => {
     console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
     console.log('=== END INITIAL SEARCH DEBUG ===');
 
-    // Fetch images for first 2 properties (progressive loading)
+    // Fetch images and deep analysis for first 2 properties (progressive loading)
     if (listings.length > 0) {
       fetchImagesForProperty(0);
+      fetchDeepAnalysisForProperty(0);
     }
     if (listings.length > 1) {
-      setTimeout(() => fetchImagesForProperty(1), 100); // Small delay to prevent simultaneous calls
+      setTimeout(() => {
+        fetchImagesForProperty(1);
+        fetchDeepAnalysisForProperty(1);
+      }, 100); // Small delay to prevent simultaneous calls
     }
 
     setCurrentIndex(0);
@@ -190,9 +361,10 @@ const AppContent: React.FC = () => {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
 
-      // Prefetch images for the next property (N+1)
+      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
@@ -205,16 +377,26 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     const currentHome = homes[currentIndex];
     if (currentHome) {
-      // Add to liked homes if not already there
-      setLikedHomes(prev => {
-        if (prev.some(h => h.id === currentHome.id)) {
-          return prev; // Already liked
+      // Check if already liked
+      const alreadyLiked = likedHomes.some(h => h.id === currentHome.id);
+
+      if (!alreadyLiked) {
+        // Add to local state
+        setLikedHomes(prev => [...prev, currentHome]);
+
+        // Save to Firestore if user is authenticated
+        if (isAuthenticated && user) {
+          try {
+            await addSavedHome(user.uid, currentHome);
+            console.log(`💾 Saved home to Firestore: ${currentHome.title}`);
+          } catch (error) {
+            console.error('❌ Failed to save home to Firestore:', error);
+          }
         }
-        return [...prev, currentHome];
-      });
+      }
     }
 
     // Move to next home
@@ -222,9 +404,10 @@ const AppContent: React.FC = () => {
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
 
-      // Prefetch images for the next property (N+1)
+      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
@@ -237,12 +420,28 @@ const AppContent: React.FC = () => {
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
 
-      // Prefetch images for the next property (N+1)
+      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
+    }
+  };
+
+  const handleRemoveSavedHome = async (id: string) => {
+    // Remove from local state
+    setLikedHomes(likedHomes.filter(h => h.id !== id));
+
+    // Remove from Firestore if user is authenticated
+    if (isAuthenticated && user) {
+      try {
+        await removeSavedHome(user.uid, id);
+        console.log(`🗑️ Removed home from Firestore: ${id}`);
+      } catch (error) {
+        console.error('❌ Failed to remove home from Firestore:', error);
+      }
     }
   };
 
@@ -295,10 +494,10 @@ const AppContent: React.FC = () => {
 
   if (appState === AppState.LIKED_HOMES) {
     return (
-      <LikedHomesView 
-        homes={likedHomes} 
-        onBack={() => setAppState(AppState.BROWSING)} 
-        onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))} 
+      <LikedHomesView
+        homes={likedHomes}
+        onBack={() => setAppState(AppState.BROWSING)}
+        onRemove={handleRemoveSavedHome}
       />
     );
   }

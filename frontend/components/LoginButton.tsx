@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const LoginButton: React.FC = () => {
-  const { user, isAuthenticated, login, logout, loading } = useAuth();
+  const { user, isAuthenticated, login, register, logout, loading } = useAuth();
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [registering, setRegistering] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,12 +44,78 @@ export const LoginButton: React.FC = () => {
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!username || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      setRegistering(true);
+      await register(username, email, password);
+      setShowRegisterForm(false);
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      if (error.message === 'Username already taken') {
+        setError('Username already taken');
+      } else if (error.code === 'auth/email-already-in-use') {
+        setError('Email already in use');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password is too weak');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error('Logout failed:', error);
     }
+  };
+
+  const resetForms = () => {
+    setShowLoginForm(false);
+    setShowRegisterForm(false);
+    setError('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setUsername('');
   };
 
   if (loading) {
@@ -57,7 +127,7 @@ export const LoginButton: React.FC = () => {
       <div style={styles.userContainer}>
         <div style={styles.userInfo}>
           <div style={styles.avatar}>👤</div>
-          <span style={styles.userEmail}>{user.email}</span>
+          <span style={styles.userEmail}>{user.displayName || user.email}</span>
         </div>
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
@@ -66,10 +136,80 @@ export const LoginButton: React.FC = () => {
     );
   }
 
+  if (showRegisterForm) {
+    return (
+      <div style={styles.loginFormContainer}>
+        <form onSubmit={handleRegister} style={styles.registerForm}>
+          <div style={styles.formTitle}>Create Account</div>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={styles.input}
+            autoFocus
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+          />
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            style={styles.input}
+          />
+          {error && <div style={styles.error}>{error}</div>}
+          <div style={styles.buttonGroup}>
+            <button
+              type="submit"
+              disabled={registering}
+              style={{ ...styles.submitButton, opacity: registering ? 0.5 : 1 }}
+            >
+              {registering ? 'Creating...' : 'Register'}
+            </button>
+            <button
+              type="button"
+              onClick={resetForms}
+              style={styles.cancelButton}
+            >
+              Cancel
+            </button>
+          </div>
+          <div style={styles.switchLink}>
+            Already have an account?{' '}
+            <span
+              onClick={() => {
+                setShowRegisterForm(false);
+                setShowLoginForm(true);
+                setError('');
+              }}
+              style={styles.linkText}
+            >
+              Login
+            </span>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   if (showLoginForm) {
     return (
       <div style={styles.loginFormContainer}>
         <form onSubmit={handleLogin} style={styles.loginForm}>
+          <div style={styles.formTitle}>Sign In</div>
           <input
             type="email"
             placeholder="Email"
@@ -96,16 +236,24 @@ export const LoginButton: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setShowLoginForm(false);
-                setError('');
-                setEmail('');
-                setPassword('');
-              }}
+              onClick={resetForms}
               style={styles.cancelButton}
             >
               Cancel
             </button>
+          </div>
+          <div style={styles.switchLink}>
+            Don't have an account?{' '}
+            <span
+              onClick={() => {
+                setShowLoginForm(false);
+                setShowRegisterForm(true);
+                setError('');
+              }}
+              style={styles.linkText}
+            >
+              Register
+            </span>
           </div>
         </form>
       </div>
@@ -191,8 +339,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     position: 'fixed',
     right: '24px',
     top: '48px',
-    width: '200px',
+    width: '220px',
     zIndex: 9999,
+  },
+  registerForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    padding: '12px',
+    backgroundColor: 'white',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    border: '1px solid #e0e0e0',
+    position: 'fixed',
+    right: '24px',
+    top: '48px',
+    width: '220px',
+    zIndex: 9999,
+  },
+  formTitle: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#333',
+    marginBottom: '4px',
   },
   input: {
     padding: '6px 8px',
@@ -234,5 +403,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 400,
     cursor: 'pointer',
     transition: 'all 0.2s',
+  },
+  switchLink: {
+    fontSize: '10px',
+    color: '#666',
+    textAlign: 'center',
+    marginTop: '4px',
+  },
+  linkText: {
+    color: '#4285f4',
+    cursor: 'pointer',
+    textDecoration: 'underline',
   },
 };
