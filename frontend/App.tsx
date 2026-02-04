@@ -8,13 +8,9 @@ import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
-import { mockHomes } from './mockData';
+import { AuthProvider } from './contexts/AuthContext';
 
-// Set to true to use mock data for faster frontend testing
-//const USE_MOCK_DATA = true;
-const USE_MOCK_DATA = false;
-
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
   const [homes, setHomes] = useState<Home[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -101,56 +97,35 @@ const App: React.FC = () => {
     console.log('=== END PREFERENCES STATE ===');
   }, [userPreferences]);
 
-  // Auto-load mock data on startup if USE_MOCK_DATA is enabled (for testing)
-  useEffect(() => {
-    if (USE_MOCK_DATA && appState === AppState.LANDING) {
-      // Auto-load mock data after a brief delay to simulate real flow
-      const timer = setTimeout(() => {
-        setHomes(mockHomes);
-        setUserQuery('test search');
-        setCurrentIndex(0);
-        setAppState(AppState.BROWSING);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []); // Only run once on mount
-
   const startDiscovery = async (query: string) => {
     setLoading(true);
     setUserQuery(query);
 
-    // Use mock data if enabled, otherwise call API
-    if (USE_MOCK_DATA) {
-      // Simulate API delay for realistic feel
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setHomes(mockHomes);
-    } else {
-      console.log('=== INITIAL SEARCH DEBUG ===');
-      console.log('🔍 Initial query:', query);
+    console.log('=== INITIAL SEARCH DEBUG ===');
+    console.log('🔍 Initial query:', query);
 
-      const response = await fetchRecommendations({ query, priorities: [] });
-      const { listings, preferences } = response;
+    const response = await fetchRecommendations({ query, priorities: [] });
+    const { listings, preferences } = response;
 
-      console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
-      console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
+    console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
+    console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
 
-      // Cache the entire API response for fast retrieval
-      setCachedApiResponse(response);
-      console.log('💾 Cached full API response');
+    // Cache the entire API response for fast retrieval
+    setCachedApiResponse(response);
+    console.log('💾 Cached full API response');
 
-      setHomes(listings);
-      setUserPreferences(preferences); // Store preferences for later updates
+    setHomes(listings);
+    setUserPreferences(preferences); // Store preferences for later updates
 
-      console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
-      console.log('=== END INITIAL SEARCH DEBUG ===');
+    console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
+    console.log('=== END INITIAL SEARCH DEBUG ===');
 
-      // Fetch images for first 2 properties (progressive loading)
-      if (listings.length > 0) {
-        fetchImagesForProperty(0);
-      }
-      if (listings.length > 1) {
-        setTimeout(() => fetchImagesForProperty(1), 100); // Small delay to prevent simultaneous calls
-      }
+    // Fetch images for first 2 properties (progressive loading)
+    if (listings.length > 0) {
+      fetchImagesForProperty(0);
+    }
+    if (listings.length > 1) {
+      setTimeout(() => fetchImagesForProperty(1), 100); // Small delay to prevent simultaneous calls
     }
 
     setCurrentIndex(0);
@@ -164,49 +139,28 @@ const App: React.FC = () => {
     const combinedQuery = `${userQuery}. Additionally: ${refineQuery}`;
     setUserQuery(combinedQuery);
 
-    // Use mock data if enabled, otherwise call API
-    if (USE_MOCK_DATA) {
-      // Simulate API delay for realistic feel
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Pass existing preferences to merge instead of re-extracting everything
+    console.log('=== REFINE SEARCH DEBUG ===');
+    console.log('🔄 Refine query:', refineQuery);
+    console.log('📋 Current preferences BEFORE refine:', JSON.stringify(userPreferences, null, 2));
+    console.log('🔢 Current preferences key count:', userPreferences ? Object.keys(userPreferences).length : 0);
 
-      // In mock mode, manually update preferences to simulate merging
-      if (userPreferences) {
-        // Create a simple merged preference by adding the refine query as a new field
-        const mockMergedPrefs = {
-          ...userPreferences,
-          originalQuery: combinedQuery,
-          // Add a generic field for the refinement
-          [refineQuery.toLowerCase().replace(/\s+/g, '_')]: true
-        };
-        console.log('🧪 MOCK MODE: Setting merged preferences:', mockMergedPrefs);
-        setUserPreferences(mockMergedPrefs);
-      }
+    const { listings, preferences } = await fetchRecommendations(
+      { query: refineQuery, priorities: [] },
+      userPreferences || undefined
+    );
 
-      setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
-    } else {
-      // Pass existing preferences to merge instead of re-extracting everything
-      console.log('=== REFINE SEARCH DEBUG ===');
-      console.log('🔄 Refine query:', refineQuery);
-      console.log('📋 Current preferences BEFORE refine:', JSON.stringify(userPreferences, null, 2));
-      console.log('🔢 Current preferences key count:', userPreferences ? Object.keys(userPreferences).length : 0);
+    console.log('✅ Received merged preferences from API:', JSON.stringify(preferences, null, 2));
+    console.log('🔢 Merged preferences key count:', preferences ? Object.keys(preferences).length : 0);
+    console.log('📝 Preference keys:', preferences ? Object.keys(preferences) : []);
 
-      const { listings, preferences } = await fetchRecommendations(
-        { query: refineQuery, priorities: [] },
-        userPreferences || undefined
-      );
+    setUserPreferences(preferences); // Update with merged preferences
 
-      console.log('✅ Received merged preferences from API:', JSON.stringify(preferences, null, 2));
-      console.log('🔢 Merged preferences key count:', preferences ? Object.keys(preferences).length : 0);
-      console.log('📝 Preference keys:', preferences ? Object.keys(preferences) : []);
+    // Double-check what was set
+    console.log('✔️ setUserPreferences called with:', JSON.stringify(preferences, null, 2));
+    console.log('=== END REFINE DEBUG ===');
 
-      setUserPreferences(preferences); // Update with merged preferences
-
-      // Double-check what was set
-      console.log('✔️ setUserPreferences called with:', JSON.stringify(preferences, null, 2));
-      console.log('=== END REFINE DEBUG ===');
-
-      setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
-    }
+    setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
 
     setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
@@ -591,5 +545,13 @@ const MapIcon = ({ size, className }: { size: number, className?: string }) => (
 const LinkIcon = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
 );
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+};
 
 export default App;
