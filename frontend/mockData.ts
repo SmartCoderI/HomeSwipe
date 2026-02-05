@@ -5,19 +5,20 @@ export const mockHomes: Home[] = [
   {
     id: "1",
     title: "East San Jose Starter Home with Highway Access",
-    price: "$1,088,000",
-    address: "1637 Orleans Dr, San Jose, CA 95122",
+    price: "$950,000",
+    address: "1924 Loyola Dr, San Jose, CA 95122",
     description: "Affordable East San Jose single-family home offering urban convenience, low environmental risk, and fast access to highways and downtown.",
-    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/607/ML82014607_1.jpg",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/379/ML82030379_2.jpg",
     additionalImages: [
-  "https://ssl.cdn-redfin.com/photo/8/bigphoto/607/ML82014607_3_0.jpg",
-  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/607/genMid.ML82014607_22_0.jpg"
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/379/ML82030379_3_2.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/379/ML82030379_6_2.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/379/ML82030379_21_2.jpg"
 ],
-    listingUrl: "https://www.redfin.com/CA/San-Jose/1637-Orleans-Dr-95122/home/1016359",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/1924-Loyola-Dr-95122/home/1543639",
     specs: {
       beds: 3,
       baths: 2,
-      sqft: 1352
+      sqft: 1040
     },
     insightBullets: {
       style: "Traditional single-family home with practical interior updates",
