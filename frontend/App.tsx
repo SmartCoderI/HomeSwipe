@@ -36,20 +36,22 @@ const AppContent: React.FC = () => {
   const [cachedApiResponse, setCachedApiResponse] = useState<any>(null);
 
   // Progressive image loading function
-  const fetchImagesForProperty = async (index: number) => {
+  // homesList parameter allows passing fresh listings directly (avoids stale closure on homes state)
+  const fetchImagesForProperty = async (index: number, homesList?: Home[]) => {
+    const currentHomes = homesList || homes;
     // Skip if already loaded, no property at index, or images already present from backend
-    if (loadedImageIndices.has(index) || !homes[index]?.redfinUrl || (homes[index]?.images?.length > 0)) {
+    if (loadedImageIndices.has(index) || !currentHomes[index]?.redfinUrl || (currentHomes[index]?.images?.length > 0)) {
       return;
     }
 
     setIsLoadingImages(true);
     try {
-      console.log(`🖼️ Fetching images for property ${index + 1}/${homes.length}`);
+      console.log(`🖼️ Fetching images for property ${index + 1}/${currentHomes.length}`);
 
       const response = await fetch('http://localhost:3001/api/fetch-property-images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ redfinUrl: homes[index].redfinUrl }),
+        body: JSON.stringify({ redfinUrl: currentHomes[index].redfinUrl }),
       });
 
       const { images, enrichedData } = await response.json();
@@ -100,17 +102,19 @@ const AppContent: React.FC = () => {
   };
 
   // Progressive deep analysis loading function
-  const fetchDeepAnalysisForProperty = async (index: number) => {
+  // homesList parameter allows passing fresh listings directly (avoids stale closure on homes state)
+  const fetchDeepAnalysisForProperty = async (index: number, homesList?: Home[]) => {
+    const currentHomes = homesList || homes;
     // Skip if already loaded or no property at index
-    if (loadedDeepAnalysisIndices.has(index) || !homes[index]?.address) {
+    if (loadedDeepAnalysisIndices.has(index) || !currentHomes[index]?.address) {
       return;
     }
 
     setIsLoadingDeepAnalysis(true);
     try {
-      console.log(`🔍 Fetching deep analysis for property ${index + 1}/${homes.length}`);
+      console.log(`🔍 Fetching deep analysis for property ${index + 1}/${currentHomes.length}`);
 
-      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(homes[index].address)}`);
+      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(currentHomes[index].address)}`);
 
       if (!response.ok) {
         throw new Error('Deep analysis API request failed');
@@ -288,14 +292,15 @@ const AppContent: React.FC = () => {
     console.log('=== END INITIAL SEARCH DEBUG ===');
 
     // Fetch images and deep analysis for first 2 properties (progressive loading)
+    // Pass listings directly to avoid stale closure on homes state
     if (listings.length > 0) {
-      fetchImagesForProperty(0);
-      fetchDeepAnalysisForProperty(0);
+      fetchImagesForProperty(0, listings);
+      fetchDeepAnalysisForProperty(0, listings);
     }
     if (listings.length > 1) {
       setTimeout(() => {
-        fetchImagesForProperty(1);
-        fetchDeepAnalysisForProperty(1);
+        fetchImagesForProperty(1, listings);
+        fetchDeepAnalysisForProperty(1, listings);
       }, 100); // Small delay to prevent simultaneous calls
     }
 
