@@ -86,19 +86,19 @@ export const mockHomes: Home[] = [
   {
     id: "3",
     title: "Evergreen Home Near Foothills & Parks",
-    price: "$1,248,000",
-    address: "3455 Cuesta Dr, San Jose, CA 95148",
+    price: "$1,175,000",
+    address: "1310 Park Pleasant Cir, San Jose, CA 95127",
     description: "Well-Maintained Evergreen Home Near Foothills with Private Yard",
     imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/771/ML82027771_1.jpg",
     additionalImages: [
-  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/771/genMid.ML82027771_4_1.jpg",
-  "https://ssl.cdn-redfin.com/photo/8/bigphoto/771/ML82027771_6_1.jpg"
+  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/791/genMid.ML82016791_1_1.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/791/genMid.ML82016791_2_1.jpg"
 ],
-    listingUrl: "https://www.redfin.com/CA/San-Jose/3455-Cuesta-Dr-95148/home/953185",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/1310-Park-Pleasant-Cir-95127/home/1318423",
     specs: {
-      beds: 4,
-      baths: 2.5,
-      sqft: 1973
+      beds: 3,
+      baths: 2,
+      sqft: 1494
     },
     insightBullets: {
       style: "Traditional single-family home with a practical, family-oriented layout",
