@@ -5,15 +5,19 @@ export const mockHomes: Home[] = [
   {
     id: "1",
     title: "East San Jose Starter Home with Highway Access",
-    price: "$950,000",
-    address: "1616 Waverly Ave, San Jose, CA 95122",
+    price: "$1,088,000",
+    address: "1637 Orleans Dr, San Jose, CA 95122",
     description: "Affordable East San Jose single-family home offering urban convenience, low environmental risk, and fast access to highways and downtown.",
-    imageUrl: "https://ssl.cdn-redfin.com/photo/45/bigphoto/082/CV25277082_0.jpg",
-    listingUrl: "https://www.redfin.com/CA/San-Jose/1616-Waverly-Ave-95122/home/1703532",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/607/ML82014607_1.jpg",
+    additionalImages: [
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/607/ML82014607_3_0.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/607/genMid.ML82014607_22_0.jpg"
+],
+    listingUrl: "https://www.redfin.com/CA/San-Jose/1637-Orleans-Dr-95122/home/1016359",
     specs: {
       beds: 3,
       baths: 2,
-      sqft: 1094
+      sqft: 1352
     },
     insightBullets: {
       style: "Traditional single-family home with practical interior updates",
@@ -82,19 +86,18 @@ export const mockHomes: Home[] = [
     id: "3",
     title: "Evergreen Home Near Foothills & Parks",
     price: "$1,248,000",
-    address: "3279 Cuesta Dr, San Jose, CA 95148",
+    address: "3455 Cuesta Dr, San Jose, CA 95148",
     description: "Well-Maintained Evergreen Home Near Foothills with Private Yard",
-    imageUrl: "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/item_53.jpg",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/771/ML82027771_1.jpg",
     additionalImages: [
-  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/genLdpUgcMediaBrowserUrl/item_42.jpg",
-  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/genLdpUgcMediaBrowserUrl/item_8.jpg",
-  "https://ssl.cdn-redfin.com/system_files/media/1187633_JPG/item_33.jpg"
+  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/771/genMid.ML82027771_4_1.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/771/ML82027771_6_1.jpg"
 ],
-    listingUrl: "https://www.redfin.com/CA/San-Jose/3279-Cuesta-Dr-95148/home/630176",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/3455-Cuesta-Dr-95148/home/953185",
     specs: {
-      beds: 3,
-      baths: 2,
-      sqft: 1495
+      beds: 4,
+      baths: 2.5,
+      sqft: 1973
     },
     insightBullets: {
       style: "Traditional single-family home with a practical, family-oriented layout",
@@ -164,20 +167,20 @@ export const mockHomes: Home[] = [
   {
     id: "5",
     title: "West San Jose Home in Lynbrook School Zone",
-    price: "$2,499,888",
-    address: "5733 Harder St, San Jose, CA 95129",
+    price: "$2,999,000",
+    address: "1068 Johnson Ave, San Jose, CA 95129",
     description: "Compact West San Jose home offering top-tier Cupertino-area schools, low environmental risk, and strong long-term location value.",
-    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/114/ML82030114_3.jpg",
+    imageUrl: "https://ssl.cdn-redfin.com/photo/8/bigphoto/159/ML82031159_2.jpg",
     additionalImages: [
-  "https://ssl.cdn-redfin.com/photo/8/bigphoto/114/ML82030114_9_3.jpg",
-  "https://ssl.cdn-redfin.com/photo/8/mbpaddedwide/114/genMid.ML82030114_4_3.jpg"
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/159/ML82031159_3_2.jpg",
+  "https://ssl.cdn-redfin.com/photo/8/bigphoto/159/ML82031159_6_2.jpg"
 
 ],
-    listingUrl: "https://www.redfin.com/CA/San-Jose/5733-Harder-St-95129/home/1709719",
+    listingUrl: "https://www.redfin.com/CA/San-Jose/1068-Johnson-Ave-95129/home/1605548",
     specs: {
-      beds: 3,
-      baths: 2,
-      sqft: 1128
+      beds: 4,
+      baths: 3,
+      sqft: 2782
     },
     insightBullets: {
       style: "Classic California single-family home with efficient use of space",
