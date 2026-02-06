@@ -42,7 +42,7 @@ export const LikedHomesView: React.FC<LikedHomesViewProps> = ({ homes, onBack, o
   // Show comparison view
   if (isComparing && selectedHomes.length >= 2) {
     return (
-      <ComparisonView 
+      <ComparisonView
         homes={selectedHomes}
         onBack={() => setIsComparing(false)}
         onRemove={(id) => {
@@ -51,6 +51,8 @@ export const LikedHomesView: React.FC<LikedHomesViewProps> = ({ homes, onBack, o
             newSet.delete(id);
             return newSet;
           });
+          // Exit comparison mode when a home is removed
+          setIsComparing(false);
         }}
       />
     );

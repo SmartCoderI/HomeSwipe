@@ -8,13 +8,11 @@ import { Layout } from './components/Layout';
 import { HomeCard } from './components/HomeCard';
 import { ComparisonView } from './components/ComparisonView';
 import { fetchRecommendations, fetchMapAnalysis, UserSearchPreferences } from './services/geminiService';
-import { mockHomes } from './mockData';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getSavedHomes, addSavedHome, removeSavedHome } from './services/savedHomesService';
 
-// Set to true to use mock data for faster frontend testing
-//const USE_MOCK_DATA = true;
-const USE_MOCK_DATA = false;
-
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [appState, setAppState] = useState<AppState>(AppState.LANDING);
   const [homes, setHomes] = useState<Home[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -26,49 +24,56 @@ const App: React.FC = () => {
   const [deepAnalysisHome, setDeepAnalysisHome] = useState<Home | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ text: string, grounding: any[] } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  // NEW: Track user preferences as structured JSON object
   const [userPreferences, setUserPreferences] = useState<UserSearchPreferences | null>(null);
-  // NEW: Progressive image loading state
-  const [loadedImageIndices, setLoadedImageIndices] = useState<Set<number>>(new Set());
+  const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(new Set());
   const [isLoadingImages, setIsLoadingImages] = useState(false);
-  // NEW: Cache full API response for fast retrieval
+  const [loadedDeepAnalysisIds, setLoadedDeepAnalysisIds] = useState<Set<string>>(new Set());
+  const [isLoadingDeepAnalysis, setIsLoadingDeepAnalysis] = useState(false);
   const [cachedApiResponse, setCachedApiResponse] = useState<any>(null);
 
-  // Progressive image loading function
-  const fetchImagesForProperty = async (index: number) => {
-    // Skip if already loaded, no property at index, or images already present from backend
-    if (loadedImageIndices.has(index) || !homes[index]?.redfinUrl || (homes[index]?.images?.length > 0)) {
+  // Fetch images and enriched data for a property by index
+  const fetchImagesForProperty = async (index: number, homesList?: Home[]) => {
+    const currentHomes = homesList || homes;
+    const home = currentHomes[index];
+    if (!home || loadedImageIds.has(home.id) || !home.redfinUrl || (home.images && home.images.length > 0)) {
       return;
     }
 
     setIsLoadingImages(true);
     try {
-      console.log(`🖼️ Fetching images for property ${index + 1}/${homes.length}`);
-
       const response = await fetch('http://localhost:3001/api/fetch-property-images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ redfinUrl: homes[index].redfinUrl }),
+        body: JSON.stringify({ redfinUrl: home.redfinUrl }),
       });
 
-      const { images } = await response.json();
+      const { images, enrichedData } = await response.json();
 
-      // Update home with images (or empty array if none available)
       setHomes(prevHomes => {
         const updated = [...prevHomes];
+        const currentHome = updated[index];
+
         updated[index] = {
-          ...updated[index],
+          ...currentHome,
           images: images || [],
-          imageUrl: images?.[0] || null // null means no images available
+          imageUrl: images?.[0] || null,
+          insightBullets: {
+            ...currentHome.insightBullets,
+            schools: enrichedData?.schools || currentHome.insightBullets.schools,
+            transit: enrichedData?.transit || currentHome.insightBullets.transit,
+            financials: enrichedData?.financials || currentHome.insightBullets.financials,
+            style: enrichedData?.style || currentHome.insightBullets.style,
+            vibe: enrichedData?.amenities
+              ? `${currentHome.insightBullets.vibe}. ${enrichedData.amenities}`
+              : currentHome.insightBullets.vibe
+          }
         };
         return updated;
       });
 
-      setLoadedImageIndices(prev => new Set(prev).add(index));
-      console.log(`✅ Loaded ${images?.length || 0} images for property ${index + 1}`);
+      setLoadedImageIds(prev => new Set(prev).add(home.id));
     } catch (error) {
       console.error('Failed to fetch images:', error);
-      // Set empty images array on error - will show "no images available"
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         updated[index] = {
@@ -83,74 +88,164 @@ const App: React.FC = () => {
     }
   };
 
-  // Debug: Log preference changes
-  useEffect(() => {
-    console.log('=== PREFERENCES STATE CHANGED ===');
-    if (userPreferences) {
-      console.log('📋 User preferences updated:', JSON.stringify(userPreferences, null, 2));
-      console.log('🔢 Key count:', Object.keys(userPreferences).length);
-      console.log('📝 Keys:', Object.keys(userPreferences));
-
-      // Log what will be displayed (excluding originalQuery)
-      const displayKeys = Object.keys(userPreferences).filter(k => k !== 'originalQuery');
-      console.log('🎨 Keys to display in preferences box:', displayKeys);
-      console.log('📊 Display condition met?', Object.keys(userPreferences).length > 1);
-    } else {
-      console.log('📋 User preferences is NULL/UNDEFINED');
+  // Fetch deep analysis (risk, safety, hospitals, green space) for a property by index
+  const fetchDeepAnalysisForProperty = async (index: number, homesList?: Home[]) => {
+    const currentHomes = homesList || homes;
+    const home = currentHomes[index];
+    if (!home || loadedDeepAnalysisIds.has(home.id) || !home.address) {
+      return;
     }
-    console.log('=== END PREFERENCES STATE ===');
-  }, [userPreferences]);
 
-  // Auto-load mock data on startup if USE_MOCK_DATA is enabled (for testing)
-  useEffect(() => {
-    if (USE_MOCK_DATA && appState === AppState.LANDING) {
-      // Auto-load mock data after a brief delay to simulate real flow
-      const timer = setTimeout(() => {
-        setHomes(mockHomes);
-        setUserQuery('test search');
-        setCurrentIndex(0);
-        setAppState(AppState.BROWSING);
-      }, 1000);
-      return () => clearTimeout(timer);
+    setIsLoadingDeepAnalysis(true);
+    try {
+
+      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(home.address)}`);
+
+      if (!response.ok) {
+        throw new Error('Deep analysis API request failed');
+      }
+
+      const deepAnalysisData = await response.json();
+
+      const { data } = deepAnalysisData;
+
+      setHomes(prevHomes => {
+        const updated = [...prevHomes];
+        const currentHome = updated[index];
+
+        updated[index] = {
+          ...currentHome,
+          insightBullets: {
+            ...currentHome.insightBullets,
+            risk: formatRiskInsight(data?.flood, data?.fire, data?.earthquake, data?.superfund),
+            safety: formatSafetyInsight(data?.crime),
+            hospitals: formatHospitalsInsight(data?.hospitals),
+            greenSpace: formatGreenSpaceInsight(data?.greenSpace)
+          }
+        };
+        return updated;
+      });
+
+      setLoadedDeepAnalysisIds(prev => new Set(prev).add(home.id));
+    } catch (error) {
+      console.error('Failed to fetch deep analysis:', error);
+    } finally {
+      setIsLoadingDeepAnalysis(false);
     }
-  }, []); // Only run once on mount
+  };
+
+  const formatRiskInsight = (flood: any, fire: any, earthquake: any, superfund: any): string => {
+    if (!flood && !fire && !earthquake && !superfund) {
+      return "Risk data unavailable";
+    }
+
+    const risks: string[] = [];
+
+    if (flood && !flood.error) {
+      const zone = flood.zone || 'Unknown';
+      if (zone !== 'X' && zone !== 'Unknown') {
+        risks.push(`Flood Zone ${zone}`);
+      }
+    }
+
+    if (fire && !fire.error && fire.hazardLevel) {
+      risks.push(`Fire: ${fire.hazardLevel}`);
+    }
+
+    if (earthquake && !earthquake.error && earthquake.riskLevel) {
+      risks.push(`Earthquake: ${earthquake.riskLevel}`);
+    }
+
+    if (superfund && !superfund.error && superfund.sites && superfund.sites.length > 0) {
+      risks.push(`${superfund.sites.length} superfund site(s) nearby`);
+    }
+
+    return risks.length > 0 ? risks.join(', ') : "Low environmental risk";
+  };
+
+  const formatSafetyInsight = (crime: any): string => {
+    if (!crime || crime.error) {
+      return "Safety data unavailable";
+    }
+
+    if (crime.crimeRate) {
+      return `Crime rate: ${crime.crimeRate} incidents/1000 residents`;
+    }
+
+    return "Safety data limited";
+  };
+
+  const formatHospitalsInsight = (hospitals: any): string => {
+    if (!hospitals || hospitals.error || !hospitals.facilities) {
+      return "Hospital data unavailable";
+    }
+
+    const count = hospitals.facilities.length;
+    if (count === 0) {
+      return "No hospitals found nearby";
+    }
+
+    const nearest = hospitals.facilities[0];
+    const distance = nearest.distance ? `${nearest.distance.toFixed(1)} mi` : '';
+
+    return `${count} hospital(s) nearby${distance ? `, nearest: ${distance}` : ''}`;
+  };
+
+  const formatGreenSpaceInsight = (greenSpace: any): string => {
+    if (!greenSpace || greenSpace.error || !greenSpace.parks) {
+      return "Green space data unavailable";
+    }
+
+    const count = greenSpace.parks.length;
+    if (count === 0) {
+      return "Limited green space nearby";
+    }
+
+    const nearest = greenSpace.parks[0];
+    const distance = nearest.distance ? `${nearest.distance.toFixed(1)} mi` : '';
+
+    return `${count} park(s) nearby${distance ? `, nearest: ${distance}` : ''}`;
+  };
+
+  // Load saved homes from Firestore on auth state change
+  useEffect(() => {
+    const loadSavedHomes = async () => {
+      if (isAuthenticated && user) {
+        try {
+          const savedHomes = await getSavedHomes(user.uid);
+          setLikedHomes(savedHomes);
+        } catch (error) {
+          console.error('Failed to load saved homes:', error);
+        }
+      } else {
+        setLikedHomes([]);
+      }
+    };
+
+    loadSavedHomes();
+  }, [isAuthenticated, user]);
 
   const startDiscovery = async (query: string) => {
     setLoading(true);
     setUserQuery(query);
 
-    // Use mock data if enabled, otherwise call API
-    if (USE_MOCK_DATA) {
-      // Simulate API delay for realistic feel
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setHomes(mockHomes);
-    } else {
-      console.log('=== INITIAL SEARCH DEBUG ===');
-      console.log('🔍 Initial query:', query);
+    const response = await fetchRecommendations({ query, priorities: [] });
+    const { listings, preferences } = response;
 
-      const response = await fetchRecommendations({ query, priorities: [] });
-      const { listings, preferences } = response;
+    setCachedApiResponse(response);
+    setHomes(listings);
+    setUserPreferences(preferences);
 
-      console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
-      console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
-
-      // Cache the entire API response for fast retrieval
-      setCachedApiResponse(response);
-      console.log('💾 Cached full API response');
-
-      setHomes(listings);
-      setUserPreferences(preferences); // Store preferences for later updates
-
-      console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
-      console.log('=== END INITIAL SEARCH DEBUG ===');
-
-      // Fetch images for first 2 properties (progressive loading)
-      if (listings.length > 0) {
-        fetchImagesForProperty(0);
-      }
-      if (listings.length > 1) {
-        setTimeout(() => fetchImagesForProperty(1), 100); // Small delay to prevent simultaneous calls
-      }
+    // Prefetch images and deep analysis for first 2 properties
+    if (listings.length > 0) {
+      fetchImagesForProperty(0, listings);
+      fetchDeepAnalysisForProperty(0, listings);
+    }
+    if (listings.length > 1) {
+      setTimeout(() => {
+        fetchImagesForProperty(1, listings);
+        fetchDeepAnalysisForProperty(1, listings);
+      }, 100); // Small delay to prevent simultaneous calls
     }
 
     setCurrentIndex(0);
@@ -164,51 +259,33 @@ const App: React.FC = () => {
     const combinedQuery = `${userQuery}. Additionally: ${refineQuery}`;
     setUserQuery(combinedQuery);
 
-    // Use mock data if enabled, otherwise call API
-    if (USE_MOCK_DATA) {
-      // Simulate API delay for realistic feel
-      await new Promise(resolve => setTimeout(resolve, 500));
+    const { listings, preferences } = await fetchRecommendations(
+      { query: refineQuery, priorities: [] },
+      userPreferences || undefined
+    );
 
-      // In mock mode, manually update preferences to simulate merging
-      if (userPreferences) {
-        // Create a simple merged preference by adding the refine query as a new field
-        const mockMergedPrefs = {
-          ...userPreferences,
-          originalQuery: combinedQuery,
-          // Add a generic field for the refinement
-          [refineQuery.toLowerCase().replace(/\s+/g, '_')]: true
-        };
-        console.log('🧪 MOCK MODE: Setting merged preferences:', mockMergedPrefs);
-        setUserPreferences(mockMergedPrefs);
-      }
+    setUserPreferences(preferences);
 
-      setHomes([...homes.slice(0, currentIndex + 1), ...mockHomes]);
-    } else {
-      // Pass existing preferences to merge instead of re-extracting everything
-      console.log('=== REFINE SEARCH DEBUG ===');
-      console.log('🔄 Refine query:', refineQuery);
-      console.log('📋 Current preferences BEFORE refine:', JSON.stringify(userPreferences, null, 2));
-      console.log('🔢 Current preferences key count:', userPreferences ? Object.keys(userPreferences).length : 0);
+    // Merge: keep homes up to current, then add new listings
+    const newHomes = [...homes.slice(0, currentIndex + 1), ...listings];
+    setHomes(newHomes);
 
-      const { listings, preferences } = await fetchRecommendations(
-        { query: refineQuery, priorities: [] },
-        userPreferences || undefined
-      );
+    // New current index will be the first new listing
+    const newCurrentIndex = currentIndex + 1;
+    setCurrentIndex(newCurrentIndex);
 
-      console.log('✅ Received merged preferences from API:', JSON.stringify(preferences, null, 2));
-      console.log('🔢 Merged preferences key count:', preferences ? Object.keys(preferences).length : 0);
-      console.log('📝 Preference keys:', preferences ? Object.keys(preferences) : []);
-
-      setUserPreferences(preferences); // Update with merged preferences
-
-      // Double-check what was set
-      console.log('✔️ setUserPreferences called with:', JSON.stringify(preferences, null, 2));
-      console.log('=== END REFINE DEBUG ===');
-
-      setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
+    // Prefetch images and deep analysis for first 2 new listings
+    if (listings.length > 0) {
+      fetchImagesForProperty(newCurrentIndex, newHomes);
+      fetchDeepAnalysisForProperty(newCurrentIndex, newHomes);
+    }
+    if (listings.length > 1) {
+      setTimeout(() => {
+        fetchImagesForProperty(newCurrentIndex + 1, newHomes);
+        fetchDeepAnalysisForProperty(newCurrentIndex + 1, newHomes);
+      }, 100);
     }
 
-    setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
     setLoading(false);
   };
@@ -219,9 +296,6 @@ const App: React.FC = () => {
     const updatedPreferences = { ...userPreferences };
     delete updatedPreferences[key];
     setUserPreferences(updatedPreferences);
-
-    // Optionally re-filter homes based on updated preferences
-    // You could implement client-side filtering here if needed
   };
 
   const openMapAnalysis = async (home: Home) => {
@@ -235,10 +309,9 @@ const App: React.FC = () => {
     if (currentIndex < homes.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-
-      // Prefetch images for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
@@ -251,26 +324,29 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     const currentHome = homes[currentIndex];
     if (currentHome) {
-      // Add to liked homes if not already there
-      setLikedHomes(prev => {
-        if (prev.some(h => h.id === currentHome.id)) {
-          return prev; // Already liked
+      const alreadyLiked = likedHomes.some(h => h.id === currentHome.id);
+      if (!alreadyLiked) {
+        setLikedHomes(prev => [...prev, currentHome]);
+        if (isAuthenticated && user) {
+          try {
+            await addSavedHome(user.uid, currentHome);
+          } catch (error) {
+            console.error('Failed to save home to Firestore:', error);
+          }
         }
-        return [...prev, currentHome];
-      });
+      }
     }
 
-    // Move to next home
     const nextIndex = currentIndex + 1;
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
 
-      // Prefetch images for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
@@ -278,21 +354,29 @@ const App: React.FC = () => {
   };
 
   const handleDislike = () => {
-    // Move to next home
     const nextIndex = currentIndex + 1;
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
-
-      // Prefetch images for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
+        fetchDeepAnalysisForProperty(nextIndex + 1);
       }
     } else {
       setAppState(AppState.LANDING);
     }
   };
 
-  // Improved markdown-like text rendering
+  const handleRemoveSavedHome = async (id: string) => {
+    setLikedHomes(likedHomes.filter(h => h.id !== id));
+    if (isAuthenticated && user) {
+      try {
+        await removeSavedHome(user.uid, id);
+      } catch (error) {
+        console.error('Failed to remove home from Firestore:', error);
+      }
+    }
+  };
+
   const renderAnalysisContent = (text: string) => {
     const lines = text.split('\n');
     return lines.map((line, i) => {
@@ -341,10 +425,10 @@ const App: React.FC = () => {
 
   if (appState === AppState.LIKED_HOMES) {
     return (
-      <LikedHomesView 
-        homes={likedHomes} 
-        onBack={() => setAppState(AppState.BROWSING)} 
-        onRemove={(id) => setLikedHomes(likedHomes.filter(h => h.id !== id))} 
+      <LikedHomesView
+        homes={likedHomes}
+        onBack={() => setAppState(AppState.BROWSING)}
+        onRemove={handleRemoveSavedHome}
       />
     );
   }
@@ -393,13 +477,6 @@ const App: React.FC = () => {
         {(() => {
           const shouldShow = userPreferences && Object.keys(userPreferences).length > 1;
           const entries = userPreferences ? Object.entries(userPreferences).filter(([key]) => key !== 'originalQuery') : [];
-
-          console.log('🎨 RENDERING Preferences Box:');
-          console.log('   - userPreferences exists?', !!userPreferences);
-          console.log('   - Total keys:', userPreferences ? Object.keys(userPreferences).length : 0);
-          console.log('   - Should show box?', shouldShow);
-          console.log('   - Entries to display:', entries.length);
-          console.log('   - Entries:', entries.map(([k, v]) => `${k}=${v}`).join(', '));
 
           return shouldShow && (
             <div className="mb-4 glass p-4 rounded-2xl border border-peri/10">
@@ -563,7 +640,7 @@ const App: React.FC = () => {
   );
 };
 
-// SVG Icon Mocks
+// SVG Icons
 const ArrowLeft = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
 );
@@ -591,5 +668,13 @@ const MapIcon = ({ size, className }: { size: number, className?: string }) => (
 const LinkIcon = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
 );
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+};
 
 export default App;

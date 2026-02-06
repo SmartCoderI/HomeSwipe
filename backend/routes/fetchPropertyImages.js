@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * POST /api/fetch-property-images
- * Fetch property images on-demand for progressive loading
+ * Fetch property images and enriched data on-demand for progressive loading
  *
  * Request body:
  * {
@@ -16,7 +16,14 @@ const router = express.Router();
  * Response:
  * {
  *   "success": true,
- *   "images": ["url1", "url2", ...] // Empty array if no images available
+ *   "images": ["url1", "url2", ...], // Empty array if no images available
+ *   "enrichedData": {
+ *     "schools": "School insight string",
+ *     "transit": "Transit insight string",
+ *     "amenities": "Amenity insight string",
+ *     "financials": "Financial insight string",
+ *     "style": "Style insight string"
+ *   }
  * }
  */
 router.post('/api/fetch-property-images', async (req, res) => {
@@ -32,32 +39,38 @@ router.post('/api/fetch-property-images', async (req, res) => {
   }
 
   try {
-    console.log(`[FetchImages] Fetching images for property: ${redfinUrl}`);
+    console.log(`[FetchImages] Fetching images and enriched data for property: ${redfinUrl}`);
 
-    // Call Redfin detail API to get property details with images
-    const photoUrls = await getPropertyDetails(redfinUrl);
+    // Call Redfin detail API to get property details with images and enriched data
+    const propertyData = await getPropertyDetails(redfinUrl);
+
+    // Extract photos and enrichedData from response
+    const { photos, enrichedData } = propertyData;
 
     // Check if we got any images
-    if (!photoUrls || photoUrls.length === 0) {
+    if (!photos || photos.length === 0) {
       console.warn(`[FetchImages] No images found for property`);
       return res.json({
         success: true,
-        images: []
+        images: [],
+        enrichedData: enrichedData || {}
       });
     }
 
-    console.log(`[FetchImages] Successfully fetched ${photoUrls.length} images`);
+    console.log(`[FetchImages] Successfully fetched ${photos.length} images`);
+    console.log(`[FetchImages] Enriched data:`, enrichedData);
 
     // Limit to max 10 images per card to avoid overwhelming the UI
-    const limitedImages = photoUrls.slice(0, 10);
+    const limitedImages = photos.slice(0, 10);
 
-    if (photoUrls.length > 10) {
-      console.log(`[FetchImages] Limited from ${photoUrls.length} to 10 images`);
+    if (photos.length > 10) {
+      console.log(`[FetchImages] Limited from ${photos.length} to 10 images`);
     }
 
     return res.json({
       success: true,
-      images: limitedImages
+      images: limitedImages,
+      enrichedData: enrichedData || {}
     });
 
   } catch (error) {
@@ -68,7 +81,8 @@ router.post('/api/fetch-property-images', async (req, res) => {
     return res.json({
       success: false,
       error: error.message,
-      images: []
+      images: [],
+      enrichedData: {}
     });
   }
 });

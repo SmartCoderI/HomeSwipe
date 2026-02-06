@@ -55,27 +55,43 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ homes, onBack, o
 
                 <div className="space-y-4">
                   <div>
-                    <div className="text-[10px] text-peri uppercase font-black mb-3 tracking-widest">Personal Matches</div>
-                    <div className="space-y-2">
-                      {home.matchInsights.map((m, i) => (
-                        <div key={i} className="flex gap-2 text-xs font-semibold text-charcoal/70 bg-white/50 p-2 rounded-xl">
-                          <div className="w-1.5 h-1.5 rounded-full bg-peri mt-1 flex-shrink-0" />
-                          {m}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] text-charcoal/40 uppercase font-black mb-3 tracking-widest">Key Insights</div>
+                    <div className="text-[10px] text-peri uppercase font-black mb-3 tracking-widest">Property Insights</div>
                     <div className="space-y-3">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Style</span>
+                        <span className="text-xs font-medium">{home.insightBullets.style}</span>
+                      </div>
                       <div className="flex flex-col">
                         <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Vibe</span>
                         <span className="text-xs font-medium italic">"{home.insightBullets.vibe}"</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Risk Profile</span>
-                        <span className="text-xs font-medium">{home.insightBullets.climateRisk}</span>
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Risk</span>
+                        <span className="text-xs font-medium">{home.insightBullets.risk}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Safety</span>
+                        <span className="text-xs font-medium">{home.insightBullets.safety}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Financials</span>
+                        <span className="text-xs font-medium">{home.insightBullets.financials}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Schools</span>
+                        <span className="text-xs font-medium">{home.insightBullets.schools}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Hospitals</span>
+                        <span className="text-xs font-medium">{home.insightBullets.hospitals}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Transit</span>
+                        <span className="text-xs font-medium">{home.insightBullets.transit}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-bold text-charcoal/30 uppercase mb-0.5">Green Space</span>
+                        <span className="text-xs font-medium">{home.insightBullets.greenSpace}</span>
                       </div>
                     </div>
                   </div>
