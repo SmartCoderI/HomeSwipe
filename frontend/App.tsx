@@ -24,39 +24,31 @@ const AppContent: React.FC = () => {
   const [deepAnalysisHome, setDeepAnalysisHome] = useState<Home | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ text: string, grounding: any[] } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  // NEW: Track user preferences as structured JSON object
   const [userPreferences, setUserPreferences] = useState<UserSearchPreferences | null>(null);
-  // NEW: Progressive image loading state
-  const [loadedImageIndices, setLoadedImageIndices] = useState<Set<number>>(new Set());
+  const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(new Set());
   const [isLoadingImages, setIsLoadingImages] = useState(false);
-  // NEW: Progressive deep analysis loading state
-  const [loadedDeepAnalysisIndices, setLoadedDeepAnalysisIndices] = useState<Set<number>>(new Set());
+  const [loadedDeepAnalysisIds, setLoadedDeepAnalysisIds] = useState<Set<string>>(new Set());
   const [isLoadingDeepAnalysis, setIsLoadingDeepAnalysis] = useState(false);
-  // NEW: Cache full API response for fast retrieval
   const [cachedApiResponse, setCachedApiResponse] = useState<any>(null);
 
-  // Progressive image loading function
-  // homesList parameter allows passing fresh listings directly (avoids stale closure on homes state)
+  // Fetch images and enriched data for a property by index
   const fetchImagesForProperty = async (index: number, homesList?: Home[]) => {
     const currentHomes = homesList || homes;
-    // Skip if already loaded, no property at index, or images already present from backend
-    if (loadedImageIndices.has(index) || !currentHomes[index]?.redfinUrl || (currentHomes[index]?.images?.length > 0)) {
+    const home = currentHomes[index];
+    if (!home || loadedImageIds.has(home.id) || !home.redfinUrl || (home.images && home.images.length > 0)) {
       return;
     }
 
     setIsLoadingImages(true);
     try {
-      console.log(`🖼️ Fetching images for property ${index + 1}/${currentHomes.length}`);
-
       const response = await fetch('http://localhost:3001/api/fetch-property-images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ redfinUrl: currentHomes[index].redfinUrl }),
+        body: JSON.stringify({ redfinUrl: home.redfinUrl }),
       });
 
       const { images, enrichedData } = await response.json();
 
-      // Update home with images and enriched insight data
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         const currentHome = updated[index];
@@ -64,15 +56,13 @@ const AppContent: React.FC = () => {
         updated[index] = {
           ...currentHome,
           images: images || [],
-          imageUrl: images?.[0] || null, // null means no images available
+          imageUrl: images?.[0] || null,
           insightBullets: {
             ...currentHome.insightBullets,
-            // Only update if enrichedData provides better info than placeholders
             schools: enrichedData?.schools || currentHome.insightBullets.schools,
             transit: enrichedData?.transit || currentHome.insightBullets.transit,
             financials: enrichedData?.financials || currentHome.insightBullets.financials,
             style: enrichedData?.style || currentHome.insightBullets.style,
-            // Keep vibe from Gemini, append amenity context if available
             vibe: enrichedData?.amenities
               ? `${currentHome.insightBullets.vibe}. ${enrichedData.amenities}`
               : currentHome.insightBullets.vibe
@@ -81,12 +71,9 @@ const AppContent: React.FC = () => {
         return updated;
       });
 
-      setLoadedImageIndices(prev => new Set(prev).add(index));
-      console.log(`✅ Loaded ${images?.length || 0} images for property ${index + 1}`);
-      console.log(`📊 Enriched data applied:`, enrichedData);
+      setLoadedImageIds(prev => new Set(prev).add(home.id));
     } catch (error) {
       console.error('Failed to fetch images:', error);
-      // Set empty images array on error - will show "no images available"
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         updated[index] = {
@@ -101,20 +88,18 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // Progressive deep analysis loading function
-  // homesList parameter allows passing fresh listings directly (avoids stale closure on homes state)
+  // Fetch deep analysis (risk, safety, hospitals, green space) for a property by index
   const fetchDeepAnalysisForProperty = async (index: number, homesList?: Home[]) => {
     const currentHomes = homesList || homes;
-    // Skip if already loaded or no property at index
-    if (loadedDeepAnalysisIndices.has(index) || !currentHomes[index]?.address) {
+    const home = currentHomes[index];
+    if (!home || loadedDeepAnalysisIds.has(home.id) || !home.address) {
       return;
     }
 
     setIsLoadingDeepAnalysis(true);
     try {
-      console.log(`🔍 Fetching deep analysis for property ${index + 1}/${currentHomes.length}`);
 
-      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(currentHomes[index].address)}`);
+      const response = await fetch(`http://localhost:3001/api/deep-analysis?address=${encodeURIComponent(home.address)}`);
 
       if (!response.ok) {
         throw new Error('Deep analysis API request failed');
@@ -122,10 +107,8 @@ const AppContent: React.FC = () => {
 
       const deepAnalysisData = await response.json();
 
-      // Extract insight bullets from the aggregated data
       const { data } = deepAnalysisData;
 
-      // Update home with deep analysis insights
       setHomes(prevHomes => {
         const updated = [...prevHomes];
         const currentHome = updated[index];
@@ -134,7 +117,6 @@ const AppContent: React.FC = () => {
           ...currentHome,
           insightBullets: {
             ...currentHome.insightBullets,
-            // Update risk, safety, hospitals, greenSpace with real data
             risk: formatRiskInsight(data?.flood, data?.fire, data?.earthquake, data?.superfund),
             safety: formatSafetyInsight(data?.crime),
             hospitals: formatHospitalsInsight(data?.hospitals),
@@ -144,17 +126,14 @@ const AppContent: React.FC = () => {
         return updated;
       });
 
-      setLoadedDeepAnalysisIndices(prev => new Set(prev).add(index));
-      console.log(`✅ Loaded deep analysis for property ${index + 1}`);
+      setLoadedDeepAnalysisIds(prev => new Set(prev).add(home.id));
     } catch (error) {
       console.error('Failed to fetch deep analysis:', error);
-      // Keep placeholder values on error
     } finally {
       setIsLoadingDeepAnalysis(false);
     }
   };
 
-  // Helper functions to format deep analysis data into insight bullets
   const formatRiskInsight = (flood: any, fire: any, earthquake: any, superfund: any): string => {
     if (!flood && !fire && !earthquake && !superfund) {
       return "Risk data unavailable";
@@ -228,71 +207,36 @@ const AppContent: React.FC = () => {
     return `${count} park(s) nearby${distance ? `, nearest: ${distance}` : ''}`;
   };
 
-  // Load saved homes when user authenticates
+  // Load saved homes from Firestore on auth state change
   useEffect(() => {
     const loadSavedHomes = async () => {
       if (isAuthenticated && user) {
-        console.log('🔄 Loading saved homes for user:', user.uid);
         try {
           const savedHomes = await getSavedHomes(user.uid);
           setLikedHomes(savedHomes);
-          console.log(`✅ Loaded ${savedHomes.length} saved homes`);
         } catch (error) {
-          console.error('❌ Failed to load saved homes:', error);
+          console.error('Failed to load saved homes:', error);
         }
       } else {
-        // Clear liked homes when user logs out
         setLikedHomes([]);
-        console.log('🔓 User logged out, cleared saved homes');
       }
     };
 
     loadSavedHomes();
   }, [isAuthenticated, user]);
 
-  // Debug: Log preference changes
-  useEffect(() => {
-    console.log('=== PREFERENCES STATE CHANGED ===');
-    if (userPreferences) {
-      console.log('📋 User preferences updated:', JSON.stringify(userPreferences, null, 2));
-      console.log('🔢 Key count:', Object.keys(userPreferences).length);
-      console.log('📝 Keys:', Object.keys(userPreferences));
-
-      // Log what will be displayed (excluding originalQuery)
-      const displayKeys = Object.keys(userPreferences).filter(k => k !== 'originalQuery');
-      console.log('🎨 Keys to display in preferences box:', displayKeys);
-      console.log('📊 Display condition met?', Object.keys(userPreferences).length > 1);
-    } else {
-      console.log('📋 User preferences is NULL/UNDEFINED');
-    }
-    console.log('=== END PREFERENCES STATE ===');
-  }, [userPreferences]);
-
   const startDiscovery = async (query: string) => {
     setLoading(true);
     setUserQuery(query);
 
-    console.log('=== INITIAL SEARCH DEBUG ===');
-    console.log('🔍 Initial query:', query);
-
     const response = await fetchRecommendations({ query, priorities: [] });
     const { listings, preferences } = response;
 
-    console.log('✅ Initial preferences received:', JSON.stringify(preferences, null, 2));
-    console.log('🔢 Initial preferences key count:', preferences ? Object.keys(preferences).length : 0);
-
-    // Cache the entire API response for fast retrieval
     setCachedApiResponse(response);
-    console.log('💾 Cached full API response');
-
     setHomes(listings);
-    setUserPreferences(preferences); // Store preferences for later updates
+    setUserPreferences(preferences);
 
-    console.log('✔️ setUserPreferences called (initial) with:', JSON.stringify(preferences, null, 2));
-    console.log('=== END INITIAL SEARCH DEBUG ===');
-
-    // Fetch images and deep analysis for first 2 properties (progressive loading)
-    // Pass listings directly to avoid stale closure on homes state
+    // Prefetch images and deep analysis for first 2 properties
     if (listings.length > 0) {
       fetchImagesForProperty(0, listings);
       fetchDeepAnalysisForProperty(0, listings);
@@ -315,30 +259,33 @@ const AppContent: React.FC = () => {
     const combinedQuery = `${userQuery}. Additionally: ${refineQuery}`;
     setUserQuery(combinedQuery);
 
-    // Pass existing preferences to merge instead of re-extracting everything
-    console.log('=== REFINE SEARCH DEBUG ===');
-    console.log('🔄 Refine query:', refineQuery);
-    console.log('📋 Current preferences BEFORE refine:', JSON.stringify(userPreferences, null, 2));
-    console.log('🔢 Current preferences key count:', userPreferences ? Object.keys(userPreferences).length : 0);
-
     const { listings, preferences } = await fetchRecommendations(
       { query: refineQuery, priorities: [] },
       userPreferences || undefined
     );
 
-    console.log('✅ Received merged preferences from API:', JSON.stringify(preferences, null, 2));
-    console.log('🔢 Merged preferences key count:', preferences ? Object.keys(preferences).length : 0);
-    console.log('📝 Preference keys:', preferences ? Object.keys(preferences) : []);
+    setUserPreferences(preferences);
 
-    setUserPreferences(preferences); // Update with merged preferences
+    // Merge: keep homes up to current, then add new listings
+    const newHomes = [...homes.slice(0, currentIndex + 1), ...listings];
+    setHomes(newHomes);
 
-    // Double-check what was set
-    console.log('✔️ setUserPreferences called with:', JSON.stringify(preferences, null, 2));
-    console.log('=== END REFINE DEBUG ===');
+    // New current index will be the first new listing
+    const newCurrentIndex = currentIndex + 1;
+    setCurrentIndex(newCurrentIndex);
 
-    setHomes([...homes.slice(0, currentIndex + 1), ...listings]);
+    // Prefetch images and deep analysis for first 2 new listings
+    if (listings.length > 0) {
+      fetchImagesForProperty(newCurrentIndex, newHomes);
+      fetchDeepAnalysisForProperty(newCurrentIndex, newHomes);
+    }
+    if (listings.length > 1) {
+      setTimeout(() => {
+        fetchImagesForProperty(newCurrentIndex + 1, newHomes);
+        fetchDeepAnalysisForProperty(newCurrentIndex + 1, newHomes);
+      }, 100);
+    }
 
-    setCurrentIndex(currentIndex + 1);
     setRefineQuery('');
     setLoading(false);
   };
@@ -349,9 +296,6 @@ const AppContent: React.FC = () => {
     const updatedPreferences = { ...userPreferences };
     delete updatedPreferences[key];
     setUserPreferences(updatedPreferences);
-
-    // Optionally re-filter homes based on updated preferences
-    // You could implement client-side filtering here if needed
   };
 
   const openMapAnalysis = async (home: Home) => {
@@ -365,8 +309,6 @@ const AppContent: React.FC = () => {
     if (currentIndex < homes.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-
-      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
         fetchDeepAnalysisForProperty(nextIndex + 1);
@@ -385,31 +327,23 @@ const AppContent: React.FC = () => {
   const handleLike = async () => {
     const currentHome = homes[currentIndex];
     if (currentHome) {
-      // Check if already liked
       const alreadyLiked = likedHomes.some(h => h.id === currentHome.id);
-
       if (!alreadyLiked) {
-        // Add to local state
         setLikedHomes(prev => [...prev, currentHome]);
-
-        // Save to Firestore if user is authenticated
         if (isAuthenticated && user) {
           try {
             await addSavedHome(user.uid, currentHome);
-            console.log(`💾 Saved home to Firestore: ${currentHome.title}`);
           } catch (error) {
-            console.error('❌ Failed to save home to Firestore:', error);
+            console.error('Failed to save home to Firestore:', error);
           }
         }
       }
     }
 
-    // Move to next home
     const nextIndex = currentIndex + 1;
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
 
-      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
         fetchDeepAnalysisForProperty(nextIndex + 1);
@@ -420,12 +354,9 @@ const AppContent: React.FC = () => {
   };
 
   const handleDislike = () => {
-    // Move to next home
     const nextIndex = currentIndex + 1;
     if (nextIndex < homes.length) {
       setCurrentIndex(nextIndex);
-
-      // Prefetch images and deep analysis for the next property (N+1)
       if (nextIndex + 1 < homes.length) {
         fetchImagesForProperty(nextIndex + 1);
         fetchDeepAnalysisForProperty(nextIndex + 1);
@@ -436,21 +367,16 @@ const AppContent: React.FC = () => {
   };
 
   const handleRemoveSavedHome = async (id: string) => {
-    // Remove from local state
     setLikedHomes(likedHomes.filter(h => h.id !== id));
-
-    // Remove from Firestore if user is authenticated
     if (isAuthenticated && user) {
       try {
         await removeSavedHome(user.uid, id);
-        console.log(`🗑️ Removed home from Firestore: ${id}`);
       } catch (error) {
-        console.error('❌ Failed to remove home from Firestore:', error);
+        console.error('Failed to remove home from Firestore:', error);
       }
     }
   };
 
-  // Improved markdown-like text rendering
   const renderAnalysisContent = (text: string) => {
     const lines = text.split('\n');
     return lines.map((line, i) => {
@@ -551,13 +477,6 @@ const AppContent: React.FC = () => {
         {(() => {
           const shouldShow = userPreferences && Object.keys(userPreferences).length > 1;
           const entries = userPreferences ? Object.entries(userPreferences).filter(([key]) => key !== 'originalQuery') : [];
-
-          console.log('🎨 RENDERING Preferences Box:');
-          console.log('   - userPreferences exists?', !!userPreferences);
-          console.log('   - Total keys:', userPreferences ? Object.keys(userPreferences).length : 0);
-          console.log('   - Should show box?', shouldShow);
-          console.log('   - Entries to display:', entries.length);
-          console.log('   - Entries:', entries.map(([k, v]) => `${k}=${v}`).join(', '));
 
           return shouldShow && (
             <div className="mb-4 glass p-4 rounded-2xl border border-peri/10">
@@ -721,7 +640,7 @@ const AppContent: React.FC = () => {
   );
 };
 
-// SVG Icon Mocks
+// SVG Icons
 const ArrowLeft = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
 );

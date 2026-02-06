@@ -95,10 +95,7 @@ Format the response as plain text, no markdown.`;
     // Use Gemini 2.5 Flash (1.5-flash was shut down in Sept 2025)
     // Try different model variations and API versions
     const modelVariations = [
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-latest",
-      "gemini-2.0-flash-exp",
-      "gemini-1.5-pro" // Fallback to pro if flash doesn't work
+      "gemini-3-pro-preview"
     ];
     const apiVersions = ["v1beta", "v1"];
     let lastError = null;
